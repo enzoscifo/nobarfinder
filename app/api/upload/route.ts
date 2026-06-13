@@ -1,21 +1,21 @@
 import { NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
-import { checkRateLimit } from '@/lib/validate'
+import { rateLimit, rlKey } from '@/lib/redis'
 
-const MAX_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_SIZE = 5 * 1024 * 1024
+const ALLOWED  = ['image/jpeg', 'image/png', 'image/webp']
 
 export async function POST(request: Request) {
-  // Rate limit: max 10 upload per IP per jam (mencegah flood storage)
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  if (!checkRateLimit('upload', ip, 10, 60 * 60 * 1000)) {
+
+  // Rate limit: max 10 upload per IP per jam
+  const allowed = await rateLimit(rlKey('upload', ip), 10, 3600)
+  if (!allowed) {
     return NextResponse.json({ success: false, message: 'Terlalu banyak upload. Coba lagi nanti.' }, { status: 429 })
   }
 
   const token = process.env.BLOB_READ_WRITE_TOKEN
-  if (!token) {
-    return NextResponse.json({ success: false, message: 'Upload foto belum aktif. Hubungi admin.' }, { status: 503 })
-  }
+  if (!token) return NextResponse.json({ success: false, message: 'Upload foto belum aktif.' }, { status: 503 })
 
   try {
     const formData = await request.formData()

@@ -46,7 +46,8 @@ export function countWords(v: string): number {
   return v.trim().split(/\s+/).filter(Boolean).length
 }
 
-// Rate limit in-memory sederhana (per endpoint)
+// Rate limit — in-memory fallback (dipakai jika Redis belum dikonfigurasi)
+// Untuk production dengan multi-instance, pakai rateLimit() dari lib/redis.ts
 const ipCaches = new Map<string, Map<string, { count: number; resetAt: number }>>()
 
 export function checkRateLimit(

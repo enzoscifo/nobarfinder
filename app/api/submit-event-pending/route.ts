@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@vercel/postgres'
 import { DB_ENABLED } from '@/lib/db'
-import { sanitizeText, isValidEventCategory, isValidContact, countWords, checkRateLimit, MAX } from '@/lib/validate'
+import { sanitizeText, isValidEventCategory, isValidContact, countWords, MAX } from '@/lib/validate'
+import { rateLimit, rlKey } from '@/lib/redis'
 
 export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  if (!checkRateLimit('submit-event-pending', ip, 3, 60 * 60 * 1000)) {
+
+  const allowed = await rateLimit(rlKey('submit-event-pending', ip), 3, 3600)
+  if (!allowed) {
     return NextResponse.json({ success: false, message: 'Terlalu banyak submission.' }, { status: 429 })
   }
 
@@ -23,15 +26,8 @@ export async function POST(request: Request) {
 
   if (!title || !venueName) return NextResponse.json({ success: false, message: 'Data tidak lengkap' }, { status: 400 })
   if (!isValidEventCategory(category)) return NextResponse.json({ success: false, message: 'Kategori tidak valid' }, { status: 400 })
-
-  // Kontak opsional di sini (bisa fallback ke kontak venue), tapi kalau diisi harus valid
-  if (contact && !isValidContact(contact)) {
-    return NextResponse.json({ success: false, message: 'Format kontak tidak valid' }, { status: 400 })
-  }
-
-  if (desc && countWords(desc) > MAX.EVENT_DESC_WORDS) {
-    return NextResponse.json({ success: false, message: `Deskripsi maksimal ${MAX.EVENT_DESC_WORDS} kata` }, { status: 400 })
-  }
+  if (contact && !isValidContact(contact)) return NextResponse.json({ success: false, message: 'Format kontak tidak valid' }, { status: 400 })
+  if (desc && countWords(desc) > MAX.EVENT_DESC_WORDS) return NextResponse.json({ success: false, message: `Deskripsi maksimal ${MAX.EVENT_DESC_WORDS} kata` }, { status: 400 })
 
   const eventDate = new Date(body.eventDate)
   if (isNaN(eventDate.getTime()) || eventDate < new Date(Date.now() - 3 * 60 * 60 * 1000)) {
@@ -44,9 +40,7 @@ export async function POST(request: Request) {
   if (!DB_ENABLED) return NextResponse.json({ success: false }, { status: 503 })
 
   try {
-    await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS report_count INT DEFAULT 0`
     const id = `ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-    // venue_id diawali PENDING: agar admin bisa identifikasi & link setelah venue approved
     const venueRef = `PENDING:${venueName}:${venueCity}`
     await sql`
       INSERT INTO events (id, venue_id, title, description, event_date, category,
