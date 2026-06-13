@@ -40,6 +40,7 @@ export async function POST(request: Request) {
         openTime: body.openTime || '',
         phone: body.phone,
         photoUrl: body.photoUrl,
+        websiteUrl: body.websiteUrl,
         description: body.description,
         submitterName: body.submitterName,
         submitterContact: body.submitterContact,
