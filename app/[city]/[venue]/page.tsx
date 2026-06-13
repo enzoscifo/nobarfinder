@@ -119,6 +119,15 @@ export default async function VenuePage({ params }: Props) {
             ))}
           </div>
 
+          {/* Deskripsi venue */}
+          {venue.description && (
+            <div className="mt-5 bg-stone-50 border border-stone-100 rounded-2xl px-5 py-4">
+              <p className="text-sm text-stone-600 leading-relaxed whitespace-pre-line">
+                {venue.description}
+              </p>
+            </div>
+          )}
+
           {venue.phone && (
             <p className="text-sm text-stone-600 mt-4">📱 {venue.phone}</p>
           )}

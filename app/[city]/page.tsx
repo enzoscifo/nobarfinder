@@ -179,7 +179,8 @@ export default async function CityPage({ params }: Props) {
                   </Link>
                   {venue.mapsUrl && (
                     <a href={venue.mapsUrl} target="_blank" rel="noopener noreferrer"
-                      className="absolute top-3 right-3 bg-white/90 hover:bg-white text-stone-700 hover:text-green-700 text-[11px] font-bold px-2.5 py-1.5 rounded-full shadow-sm flex items-center gap-1 transition-all backdrop-blur-sm border border-white/60 z-10 opacity-0 group-hover:opacity-100">
+                      className="absolute top-3 right-3 bg-white/90 hover:bg-white text-stone-700 hover:text-green-700 text-[11px] font-bold px-2.5 py-1.5 rounded-full shadow-sm flex items-center gap-1 transition-all backdrop-blur-sm border border-white/60 z-10
+                        md:opacity-0 md:group-hover:opacity-100">
                       🗺️ Maps
                     </a>
                   )}

@@ -20,6 +20,7 @@ export interface NobarVenue {
   phone?: string
   photoUrl?: string // approved photo
   websiteUrl?: string // link ke web/medsos venue
+  description?: string // deskripsi & fasilitas venue
 }
 
 export interface VenueSubmission {
