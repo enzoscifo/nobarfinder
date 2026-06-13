@@ -5,11 +5,14 @@ import { DB_ENABLED } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
-  // Proteksi: hanya Vercel Cron (via CRON_SECRET) yang boleh akses
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Wajib ada CRON_SECRET — jika belum di-set, tolak semua akses
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'CRON_SECRET belum dikonfigurasi' }, { status: 503 })
+  }
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -18,20 +21,28 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Hapus event yang event_date-nya sudah lebih dari 24 jam yang lalu
-    const result = await sql`
+    // Hapus events yang sudah lewat 24 jam
+    const evResult = await sql`
       DELETE FROM events
       WHERE event_date < NOW() - INTERVAL '24 hours'
-      RETURNING id, title, event_date
+      RETURNING id, title
     `
 
-    const deleted = result.rows
-    console.log(`[cron/cleanup-events] Deleted ${deleted.length} expired events`)
+    // Hapus orphan event_reports yang event-nya sudah dihapus
+    await sql`
+      DELETE FROM event_reports
+      WHERE event_id NOT IN (SELECT id FROM events)
+    `
+
+    // Hapus foto orphan tidak bisa dari sini (butuh Vercel Blob API),
+    // tapi minimal log supaya bisa dibersihkan manual
+    const deleted = evResult.rows
+    console.log(`[cron/cleanup] Deleted ${deleted.length} expired events + orphan reports`)
 
     return NextResponse.json({
       success: true,
-      deleted: deleted.length,
-      events: deleted.map(r => ({ id: r.id, title: r.title, eventDate: r.event_date })),
+      deletedEvents: deleted.length,
+      events: deleted.map(r => ({ id: r.id, title: r.title })),
       timestamp: new Date().toISOString(),
     })
   } catch (e) {

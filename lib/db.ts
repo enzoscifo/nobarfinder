@@ -19,9 +19,13 @@ export interface DBVenue extends NobarVenue {
 }
 
 // ── Inisialisasi tabel + seed pertama kali ──
+// Catatan: di serverless (Vercel), module-level var bisa stale antar invocation.
+// ensureSchema() tetap idempotent karena pakai CREATE IF NOT EXISTS.
 let initialized = false
 export async function ensureSchema() {
-  if (!DB_ENABLED || initialized) return
+  if (!DB_ENABLED) return
+  // Reset flag tiap cold start — aman karena semua query pakai IF NOT EXISTS
+  if (initialized) return
   await sql`
     CREATE TABLE IF NOT EXISTS venues (
       id TEXT PRIMARY KEY,
@@ -145,10 +149,17 @@ export async function insertVenueAdmin(data: {
   return id
 }
 
-// ── UPDATE: approve ──
+// ── UPDATE: approve venue + otomatis link event PENDING ──
 export async function approveVenue(id: string) {
   await ensureSchema()
   await sql`UPDATE venues SET status = 'approved' WHERE id = ${id}`
+  // Link event PENDING yang menunggu venue ini
+  const { rows } = await sql`SELECT name, city FROM venues WHERE id = ${id}`
+  if (rows[0]) {
+    const { name, city } = rows[0]
+    const venueRef = `PENDING:${name}:${city}`
+    await sql`UPDATE events SET venue_id = ${id} WHERE venue_id = ${venueRef}`
+  }
 }
 
 // ── UPDATE: edit venue lengkap ──
