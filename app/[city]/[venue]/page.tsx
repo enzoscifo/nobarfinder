@@ -2,12 +2,22 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
-import { CITY_LIST, getCityBySlug, getAllVenues, getVenue, venueSlug, getVenuesByCity } from '@/lib/data'
+import { CITY_LIST, getCityBySlug, venueSlug } from '@/lib/data'
+import { getApprovedByCity } from '@/lib/db'
+import { NobarVenue } from '@/types'
 
 interface Props { params: Promise<{ city: string; venue: string }> }
 
+export const revalidate = 60
+export const dynamicParams = true
+
 export async function generateStaticParams() {
-  return getAllVenues().map(v => ({ city: v.city, venue: venueSlug(v) }))
+  return [] // venue pages dirender on-demand (data dari DB), lalu di-cache
+}
+
+async function findVenue(citySlug: string, vSlug: string): Promise<NobarVenue | undefined> {
+  const venues = await getApprovedByCity(citySlug)
+  return venues.find(v => venueSlug(v) === vSlug)
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -17,7 +27,7 @@ const TYPE_LABEL: Record<string, string> = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city: citySlug, venue: vSlug } = await params
   const city = getCityBySlug(citySlug)
-  const venue = getVenue(citySlug, vSlug)
+  const venue = await findVenue(citySlug, vSlug)
   if (!city || !venue) return { title: 'Venue Tidak Ditemukan — NobarFinder' }
 
   const desc = `${venue.name} — tempat nobar ${TYPE_LABEL[venue.type].toLowerCase()} di ${city.name}. ${venue.isFree ? 'Gratis masuk' : 'Berbayar'}, buka ${venue.openTime} WIB. ${venue.address}.`
@@ -36,10 +46,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function VenuePage({ params }: Props) {
   const { city: citySlug, venue: vSlug } = await params
   const city = getCityBySlug(citySlug)
-  const venue = getVenue(citySlug, vSlug)
+  const venue = await findVenue(citySlug, vSlug)
   if (!city || !venue) notFound()
 
-  const related = getVenuesByCity(citySlug).filter(v => venueSlug(v) !== vSlug).slice(0, 3)
+  const cityVenues = await getApprovedByCity(citySlug)
+  const related = cityVenues.filter(v => venueSlug(v) !== vSlug).slice(0, 3)
 
   // Schema.org LocalBusiness
   const schema = {

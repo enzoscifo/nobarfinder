@@ -1,8 +1,12 @@
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
-import { CITY_LIST, VENUES } from '@/lib/data'
+import { CITY_LIST } from '@/lib/data'
+import { getApprovedVenues } from '@/lib/db'
 
-export default function HomePage() {
+export const revalidate = 60
+
+export default async function HomePage() {
+  const VENUES = await getApprovedVenues()
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
       <SiteHeader />

@@ -2,9 +2,12 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
-import { CITY_LIST, getCityBySlug, getVenuesByCity, venueSlug } from '@/lib/data'
+import { CITY_LIST, getCityBySlug, venueSlug } from '@/lib/data'
+import { getApprovedByCity } from '@/lib/db'
 
 interface Props { params: Promise<{ city: string }> }
+
+export const revalidate = 60
 
 export async function generateStaticParams() {
   return CITY_LIST.map(c => ({ city: c.slug }))
@@ -30,7 +33,7 @@ export default async function CityPage({ params }: Props) {
   const { city: slug } = await params
   const city = getCityBySlug(slug)
   if (!city) notFound()
-  const venues = getVenuesByCity(slug)
+  const venues = await getApprovedByCity(slug)
   const freeCount = venues.filter(v => v.isFree).length
 
   const schema = {

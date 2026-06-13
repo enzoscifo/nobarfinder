@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { insertSubmission, DB_ENABLED } from '@/lib/db'
 
 const MODERATION_EMAIL = 'java2borneo@gmail.com'
 
@@ -22,78 +23,67 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: 'Nama kota baru wajib diisi' }, { status: 400 })
   }
   const cityFinal = isNewCity ? body.cityCustom.trim() : body.city
+  const citySlug = cityFinal.toLowerCase().replace(/\s+/g, '-')
 
   // Honeypot
   if (body.website) return NextResponse.json({ success: true, message: 'Terkirim' })
 
-  const accessKey = process.env.WEB3FORMS_ACCESS_KEY
-  if (!accessKey) {
-    return NextResponse.json({
-      success: false,
-      message: 'Sistem moderasi belum aktif. Kirim manual ke ' + MODERATION_EMAIL,
-      fallbackEmail: MODERATION_EMAIL,
-    }, { status: 503 })
+  // 1. Simpan ke database sebagai pending (jika DB aktif)
+  if (DB_ENABLED) {
+    try {
+      await insertSubmission({
+        name: body.venueName,
+        city: citySlug,
+        address: body.address,
+        type: body.type,
+        isFree: body.isFree === 'true',
+        openTime: body.openTime || '',
+        phone: body.phone,
+        photoUrl: body.photoUrl,
+        description: body.description,
+        submitterName: body.submitterName,
+        submitterContact: body.submitterContact,
+      })
+    } catch (e) {
+      console.error('[submit-venue] DB insert error:', e)
+    }
   }
 
-  const citySlug = cityFinal.toLowerCase().replace(/\s+/g, '-')
-  const emailBody = `
-SUBMISSION VENUE NOBAR — Perlu Moderasi
+  // 2. Kirim notifikasi email (opsional, jika Web3Forms aktif)
+  const accessKey = process.env.WEB3FORMS_ACCESS_KEY
+  if (accessKey) {
+    const emailBody = `
+SUBMISSION VENUE NOBAR — Perlu Moderasi di /admin
 ${isNewCity ? '\n🆕 USULAN KOTA BARU: ' + cityFinal.toUpperCase() + '\n' : ''}
-═══════════════════════════════════
-📍 VENUE
-═══════════════════════════════════
 Nama     : ${body.venueName}
 Kota     : ${cityFinal}${isNewCity ? ' (KOTA BARU)' : ''}
 Alamat   : ${body.address}
 Tipe     : ${body.type}
-Biaya    : ${body.isFree === 'true' ? 'GRATIS' : 'Berbayar / Min. Order'}
+Biaya    : ${body.isFree === 'true' ? 'GRATIS' : 'Berbayar'}
 Jam Buka : ${body.openTime || '-'}
+Deskripsi: ${body.description || '-'}
+Foto     : ${body.photoUrl || '(tidak ada)'}
+Pengirim : ${body.submitterName || '-'} · ${body.submitterContact}
 
-Deskripsi:
-${body.description || '-'}
-
-📷 FOTO: ${body.photoUrl ? body.photoUrl : '(tidak ada foto)'}
-${body.photoUrl ? '   ⚠️ Foto status PENDING — review dulu sebelum approve' : ''}
-
-═══════════════════════════════════
-👤 PENGIRIM
-═══════════════════════════════════
-Nama   : ${body.submitterName || '-'}
-Kontak : ${body.submitterContact}
-
-═══════════════════════════════════
-✅ CARA APPROVE (edit lib/data.ts):
-${isNewCity ? `1. Tambah ke CITY_LIST:
-   { slug: '${citySlug}', name: '${cityFinal}', emoji: '🏙️', province: '...', description: '...' }
-2. Tambah venue ke VENUES dengan city: '${citySlug}'` : `Tambah venue ke VENUES dengan city: '${citySlug}'`}
-${body.photoUrl ? '3. Set photoUrl: ' + body.photoUrl + ' (atau pindahkan dari folder pending/)' : ''}
-4. git push → auto-deploy
-═══════════════════════════════════
-nobarfinder.com/tambah
+→ Approve/Hapus di nobarfinder.com/admin
 `.trim()
-
-  try {
-    const res = await fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        access_key: accessKey,
-        subject: `[NOBARFINDER]${isNewCity ? ' 🆕 KOTA BARU +' : ''} ${body.venueName} (${cityFinal})`,
-        from_name: 'NobarFinder',
-        email: MODERATION_EMAIL,
-        message: emailBody,
-      }),
-    })
-    const result = await res.json()
-    if (result.success) {
-      return NextResponse.json({ success: true, message: 'Terkirim! Review dalam 1×24 jam.' })
-    }
-    return NextResponse.json({
-      success: false, message: 'Gagal. Email langsung ke ' + MODERATION_EMAIL, fallbackEmail: MODERATION_EMAIL,
-    }, { status: 502 })
-  } catch {
-    return NextResponse.json({
-      success: false, message: 'Koneksi gagal. Email ke ' + MODERATION_EMAIL, fallbackEmail: MODERATION_EMAIL,
-    }, { status: 502 })
+    try {
+      await fetch('https://api.web3forms.com/submit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: accessKey,
+          subject: `[NOBARFINDER]${isNewCity ? ' 🆕 KOTA BARU +' : ''} ${body.venueName} (${cityFinal})`,
+          from_name: 'NobarFinder', email: MODERATION_EMAIL, message: emailBody,
+        }),
+      })
+    } catch { /* email gagal tidak fatal, data sudah di DB */ }
   }
+
+  if (!DB_ENABLED && !accessKey) {
+    return NextResponse.json({
+      success: false, message: 'Sistem belum dikonfigurasi. Email ke ' + MODERATION_EMAIL, fallbackEmail: MODERATION_EMAIL,
+    }, { status: 503 })
+  }
+
+  return NextResponse.json({ success: true, message: 'Terkirim! Review oleh admin dalam 1×24 jam.' })
 }

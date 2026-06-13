@@ -1,10 +1,12 @@
 import type { MetadataRoute } from 'next'
-import { CITY_LIST, getAllVenues, venueSlug } from '@/lib/data'
+import { CITY_LIST, venueSlug } from '@/lib/data'
+import { getApprovedVenues } from '@/lib/db'
 
 const BASE = 'https://nobarfinder.com'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
+  const allVenues = await getApprovedVenues()
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE, lastModified: now, changeFrequency: 'daily', priority: 1 },
@@ -19,7 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.9,
   }))
 
-  const venuePages: MetadataRoute.Sitemap = getAllVenues().map(v => ({
+  const venuePages: MetadataRoute.Sitemap = allVenues.map(v => ({
     url: `${BASE}/${v.city}/${venueSlug(v)}`,
     lastModified: now,
     changeFrequency: 'weekly' as const,
