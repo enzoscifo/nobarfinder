@@ -19,6 +19,7 @@ export interface NobarVenue {
   mapsUrl: string
   phone?: string
   photoUrl?: string // approved photo
+  websiteUrl?: string // link ke web/medsos venue
 }
 
 export interface VenueSubmission {

@@ -113,6 +113,29 @@ export default async function VenuePage({ params }: Props) {
             <p className="text-sm text-stone-600 mt-4">📱 {venue.phone}</p>
           )}
 
+          {venue.websiteUrl && (() => {
+            let label = venue.websiteUrl
+            let icon = '🔗'
+            try {
+              const u = new URL(venue.websiteUrl)
+              const h = u.hostname.replace('www.', '')
+              if (h.includes('instagram')) { icon = '📸'; label = '@' + (u.pathname.split('/').filter(Boolean)[0] || h) }
+              else if (h.includes('tiktok')) { icon = '🎵'; label = '@' + (u.pathname.split('/').filter(Boolean)[0]?.replace('@','') || h) }
+              else if (h.includes('facebook') || h.includes('fb.com')) { icon = '👥'; label = u.pathname.split('/').filter(Boolean)[0] || h }
+              else if (h.includes('twitter') || h.includes('x.com')) { icon = '🐦'; label = '@' + (u.pathname.split('/').filter(Boolean)[0] || h) }
+              else if (h.includes('youtube')) { icon = '▶️'; label = h }
+              else { label = h }
+            } catch { /* pakai url asli */ }
+            return (
+              <a href={venue.websiteUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-3 text-sm text-green-700 hover:text-green-900 font-medium group">
+                <span>{icon}</span>
+                <span className="underline underline-offset-2 group-hover:no-underline">{label}</span>
+                <span className="text-stone-300 text-xs">↗</span>
+              </a>
+            )
+          })()}
+
           <div className="flex gap-3 mt-6">
             <a href={venue.mapsUrl} target="_blank" rel="noopener noreferrer"
               className="bg-green-700 hover:bg-green-800 text-white font-bold text-sm px-6 py-3 rounded-full transition-colors">

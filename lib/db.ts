@@ -36,6 +36,7 @@ export async function ensureSchema() {
       maps_url TEXT DEFAULT '',
       phone TEXT,
       photo_url TEXT,
+      website_url TEXT,
       description TEXT,
       submitter_name TEXT,
       submitter_contact TEXT,
@@ -43,6 +44,9 @@ export async function ensureSchema() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `
+  // Migrasi kolom baru (idempotent — aman dijalankan berkali-kali)
+  await sql`ALTER TABLE venues ADD COLUMN IF NOT EXISTS website_url TEXT`
+
   // Seed venue awal (sekali saja) sebagai approved
   const { rows } = await sql`SELECT COUNT(*)::int AS n FROM venues`
   if (rows[0].n === 0) {
@@ -72,6 +76,7 @@ function rowToVenue(r: Record<string, unknown>): DBVenue {
     mapsUrl: (r.maps_url as string) || '',
     phone: (r.phone as string) || undefined,
     photoUrl: (r.photo_url as string) || undefined,
+    websiteUrl: (r.website_url as string) || undefined,
     description: (r.description as string) || undefined,
     submitterName: (r.submitter_name as string) || undefined,
     submitterContact: (r.submitter_contact as string) || undefined,
@@ -107,15 +112,15 @@ export async function getAllVenuesAdmin(): Promise<DBVenue[]> {
 export async function insertSubmission(data: {
   name: string; city: string; address: string; type: string
   isFree: boolean; openTime: string; mapsUrl?: string; phone?: string
-  photoUrl?: string; description?: string; submitterName?: string; submitterContact?: string
+  photoUrl?: string; description?: string; submitterName?: string; submitterContact?: string; websiteUrl?: string
 }): Promise<string> {
   await ensureSchema()
   const id = `v-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
   await sql`
-    INSERT INTO venues (id, name, city, address, type, icon, is_free, open_time, maps_url, phone, photo_url, description, submitter_name, submitter_contact, status)
+    INSERT INTO venues (id, name, city, address, type, icon, is_free, open_time, maps_url, phone, photo_url, website_url, description, submitter_name, submitter_contact, status)
     VALUES (${id}, ${data.name}, ${data.city}, ${data.address}, ${data.type}, '📍',
             ${data.isFree}, ${data.openTime}, ${data.mapsUrl || ''}, ${data.phone || null},
-            ${data.photoUrl || null}, ${data.description || null}, ${data.submitterName || null},
+            ${data.photoUrl || null}, ${data.websiteUrl || null}, ${data.description || null}, ${data.submitterName || null},
             ${data.submitterContact || null}, 'pending')
   `
   return id
@@ -125,17 +130,17 @@ export async function insertSubmission(data: {
 export async function insertVenueAdmin(data: {
   name: string; city: string; address: string; type: string
   isFree: boolean; openTime: string; mapsUrl?: string; phone?: string
-  photoUrl?: string; description?: string; icon?: string; tags?: string[]
+  photoUrl?: string; description?: string; icon?: string; tags?: string[]; websiteUrl?: string
 }): Promise<string> {
   await ensureSchema()
   const id = `v-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
   const icon = data.icon || '📍'
   const tags = data.tags?.join('|') || ''
   await sql`
-    INSERT INTO venues (id, name, city, address, type, icon, tags, is_free, open_time, maps_url, phone, photo_url, description, status)
+    INSERT INTO venues (id, name, city, address, type, icon, tags, is_free, open_time, maps_url, phone, photo_url, website_url, description, status)
     VALUES (${id}, ${data.name}, ${data.city}, ${data.address}, ${data.type}, ${icon}, ${tags},
             ${data.isFree}, ${data.openTime}, ${data.mapsUrl || ''}, ${data.phone || null},
-            ${data.photoUrl || null}, ${data.description || null}, 'approved')
+            ${data.photoUrl || null}, ${data.websiteUrl || null}, ${data.description || null}, 'approved')
   `
   return id
 }
@@ -150,7 +155,7 @@ export async function approveVenue(id: string) {
 export async function updateVenueFull(id: string, data: {
   name?: string; city?: string; address?: string; type?: string
   isFree?: boolean; openTime?: string; mapsUrl?: string; phone?: string
-  photoUrl?: string; description?: string; icon?: string; tags?: string[]
+  photoUrl?: string; description?: string; icon?: string; tags?: string[]; websiteUrl?: string
 }) {
   await ensureSchema()
   if (data.name !== undefined)      await sql`UPDATE venues SET name = ${data.name} WHERE id = ${id}`
@@ -162,6 +167,7 @@ export async function updateVenueFull(id: string, data: {
   if (data.mapsUrl !== undefined)   await sql`UPDATE venues SET maps_url = ${data.mapsUrl} WHERE id = ${id}`
   if (data.phone !== undefined)     await sql`UPDATE venues SET phone = ${data.phone} WHERE id = ${id}`
   if (data.photoUrl !== undefined)  await sql`UPDATE venues SET photo_url = ${data.photoUrl} WHERE id = ${id}`
+  if (data.websiteUrl !== undefined) await sql`UPDATE venues SET website_url = ${data.websiteUrl} WHERE id = ${id}`
   if (data.description !== undefined) await sql`UPDATE venues SET description = ${data.description} WHERE id = ${id}`
   if (data.icon !== undefined)      await sql`UPDATE venues SET icon = ${data.icon} WHERE id = ${id}`
   if (data.tags !== undefined)      await sql`UPDATE venues SET tags = ${data.tags.join('|')} WHERE id = ${id}`

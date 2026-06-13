@@ -87,6 +87,7 @@ function EditModal({ venue, onClose, onSaved }: { venue: DBVenue; onClose: () =>
     description: venue.description || '',
     icon: venue.icon,
     tags: venue.tags.join(', '),
+    websiteUrl: venue.websiteUrl || '',
   })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -127,6 +128,7 @@ function EditModal({ venue, onClose, onSaved }: { venue: DBVenue; onClose: () =>
       description: form.description || undefined,
       icon: form.icon,
       tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+      websiteUrl: form.websiteUrl || undefined,
     }
     const res = await fetch('/api/admin/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -178,6 +180,10 @@ function EditModal({ venue, onClose, onSaved }: { venue: DBVenue; onClose: () =>
           </Field>
           <Field label="Nomor Telepon / WA">
             <input className={inputCls} value={form.phone} onChange={e => set('phone', e.target.value)} />
+          </Field>
+          <Field label="Website / Media Sosial (satu link)">
+            <input className={inputCls} value={form.websiteUrl} onChange={e => set('websiteUrl', e.target.value)}
+              placeholder="https://instagram.com/namaakun atau https://namadomain.com" />
           </Field>
           <Field label="Tag (pisah koma, cth: WiFi, AC, Proyektor)">
             <input className={inputCls} value={form.tags} onChange={e => set('tags', e.target.value)} />
@@ -235,7 +241,7 @@ function AddVenueModal({ onClose, onAdded }: { onClose: () => void; onAdded: (v:
   const [form, setForm] = useState({
     name: '', city: '', address: '', type: 'outdoor',
     isFree: true, openTime: '', mapsUrl: '',
-    phone: '', photoUrl: '', description: '', icon: '📍', tags: '',
+    phone: '', photoUrl: '', description: '', icon: '📍', tags: '', websiteUrl: '',
   })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -276,6 +282,7 @@ function AddVenueModal({ onClose, onAdded }: { onClose: () => void; onAdded: (v:
       description: form.description || undefined,
       icon: form.icon || '📍',
       tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+      websiteUrl: form.websiteUrl || undefined,
     }
     const res = await fetch('/api/admin/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -338,6 +345,10 @@ function AddVenueModal({ onClose, onAdded }: { onClose: () => void; onAdded: (v:
           </Field>
           <Field label="Nomor Telepon / WA">
             <input className={inputCls} value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="08xx-xxxx-xxxx" />
+          </Field>
+          <Field label="Website / Media Sosial (satu link)">
+            <input className={inputCls} value={form.websiteUrl} onChange={e => set('websiteUrl', e.target.value)}
+              placeholder="https://instagram.com/namaakun atau https://namadomain.com" />
           </Field>
           <Field label="Tag (pisah koma)">
             <input className={inputCls} value={form.tags} onChange={e => set('tags', e.target.value)} placeholder="WiFi, AC, Proyektor, Parkir Luas" />
