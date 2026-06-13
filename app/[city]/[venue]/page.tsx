@@ -86,7 +86,7 @@ export default async function VenuePage({ params }: Props) {
         <div className="rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 h-64 sm:h-80 flex items-center justify-center relative">
           {venue.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={venue.photoUrl} alt={venue.name} className="w-full h-full object-cover" />
+            <img src={venue.photoUrl} alt={venue.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <div className="text-7xl opacity-30">{venue.icon}</div>
           )}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { DBVenue } from '@/lib/db'
+import { DBVenue, DBEvent } from '@/lib/db'
 
 const TYPE_OPTIONS = [
   { value: 'outdoor', label: '🌿 Outdoor' },
@@ -623,7 +623,6 @@ export function AdminDashboard({ venues: initialVenues, events: initialEvents }:
 // ─────────────────────────────────────────────
 // Event Row (admin)
 // ─────────────────────────────────────────────
-import { DBEvent } from '@/lib/db'
 
 const CAT_LABEL_ADMIN: Record<string, string> = {
   'nobar-bola': '⚽ Nobar Bola', 'nobar-film': '🎬 Nobar Film',

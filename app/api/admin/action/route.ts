@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { isAdmin } from '@/lib/auth'
-import { approveVenue, deleteVenue, updateVenue, updateVenueFull, insertVenueAdmin, approveEvent, deleteEvent } from '@/lib/db'
+import { approveVenue, deleteVenue, updateVenueFull, insertVenueAdmin, approveEvent, deleteEvent } from '@/lib/db'
+import { sanitizeText, isValidVenueType, isValidUrl, MAX } from '@/lib/validate'
 
 export async function POST(request: Request) {
   if (!(await isAdmin())) {
@@ -15,48 +16,64 @@ export async function POST(request: Request) {
 
   try {
     if (body.action === 'approve') {
-      await approveVenue(body.id)
+      if (!body.id) return NextResponse.json({ success: false }, { status: 400 })
+      await approveVenue(String(body.id))
 
     } else if (body.action === 'delete') {
-      await deleteVenue(body.id)
-
-    } else if (body.action === 'update') {
-      // legacy partial update
-      await updateVenue(body.id, body.fields || {})
+      if (!body.id) return NextResponse.json({ success: false }, { status: 400 })
+      await deleteVenue(String(body.id))
 
     } else if (body.action === 'edit') {
-      // full edit semua field
       if (!body.id) return NextResponse.json({ success: false, message: 'ID tidak ada' }, { status: 400 })
-      await updateVenueFull(body.id, body.data || {})
+      const d = body.data || {}
+      // Sanitasi semua field yang bisa diedit
+      const clean: Record<string, unknown> = {}
+      if (d.name !== undefined)     clean.name        = sanitizeText(d.name, MAX.NAME)
+      if (d.city !== undefined)     clean.city        = sanitizeText(d.city, MAX.CITY).toLowerCase().replace(/\s+/g, '-')
+      if (d.address !== undefined)  clean.address     = sanitizeText(d.address, MAX.ADDRESS)
+      if (d.type !== undefined)     clean.type        = isValidVenueType(sanitizeText(d.type, 20)) ? sanitizeText(d.type, 20) : 'outdoor'
+      if (d.isFree !== undefined)   clean.isFree      = Boolean(d.isFree)
+      if (d.openTime !== undefined) clean.openTime    = sanitizeText(d.openTime, 30)
+      if (d.mapsUrl !== undefined)  clean.mapsUrl     = isValidUrl(d.mapsUrl) ? sanitizeText(d.mapsUrl, MAX.URL) : ''
+      if (d.phone !== undefined)    clean.phone       = sanitizeText(d.phone, MAX.PHONE)
+      if (d.photoUrl !== undefined) clean.photoUrl    = isValidUrl(d.photoUrl) ? sanitizeText(d.photoUrl, MAX.URL) : undefined
+      if (d.websiteUrl !== undefined) clean.websiteUrl = d.websiteUrl && isValidUrl(d.websiteUrl) ? sanitizeText(d.websiteUrl, MAX.URL) : undefined
+      if (d.description !== undefined) clean.description = sanitizeText(d.description, MAX.DESCRIPTION)
+      if (d.icon !== undefined)     clean.icon        = sanitizeText(d.icon, 4)
+      if (d.tags !== undefined)     clean.tags        = Array.isArray(d.tags) ? d.tags.map((t: unknown) => sanitizeText(String(t), 30)).filter(Boolean) : []
+      await updateVenueFull(String(body.id), clean)
 
     } else if (body.action === 'add') {
-      // tambah venue manual oleh admin (langsung approved)
       const d = body.data || {}
-      if (!d.name || !d.city || !d.address || !d.type) {
-        return NextResponse.json({ success: false, message: 'Field nama/kota/alamat/tipe wajib diisi' }, { status: 400 })
+      const name    = sanitizeText(d.name, MAX.NAME)
+      const city    = sanitizeText(d.city, MAX.CITY)
+      const address = sanitizeText(d.address, MAX.ADDRESS)
+      const type    = sanitizeText(d.type, 20)
+      if (!name || !city || !address || !isValidVenueType(type)) {
+        return NextResponse.json({ success: false, message: 'Field nama/kota/alamat/tipe wajib & valid' }, { status: 400 })
       }
       const id = await insertVenueAdmin({
-        name: d.name,
-        city: d.city.toLowerCase().replace(/\s+/g, '-'),
-        address: d.address,
-        type: d.type,
+        name, city: city.toLowerCase().replace(/\s+/g, '-'), address, type,
         isFree: d.isFree !== false,
-        openTime: d.openTime || '',
-        mapsUrl: d.mapsUrl || '',
-        phone: d.phone || undefined,
-        photoUrl: d.photoUrl || undefined,
-        description: d.description || undefined,
-        icon: d.icon || '📍',
-        tags: d.tags || [],
+        openTime: sanitizeText(d.openTime, 30),
+        mapsUrl: d.mapsUrl && isValidUrl(d.mapsUrl) ? sanitizeText(d.mapsUrl, MAX.URL) : '',
+        phone: sanitizeText(d.phone, MAX.PHONE) || undefined,
+        photoUrl: d.photoUrl && isValidUrl(d.photoUrl) ? sanitizeText(d.photoUrl, MAX.URL) : undefined,
+        websiteUrl: d.websiteUrl && isValidUrl(d.websiteUrl) ? sanitizeText(d.websiteUrl, MAX.URL) : undefined,
+        description: sanitizeText(d.description, MAX.DESCRIPTION) || undefined,
+        icon: sanitizeText(d.icon, 4) || '📍',
+        tags: Array.isArray(d.tags) ? d.tags.map((t: unknown) => sanitizeText(String(t), 30)).filter(Boolean) : [],
       })
       revalidatePath('/', 'layout')
       return NextResponse.json({ success: true, id })
 
     } else if (body.action === 'approve-event') {
-      await approveEvent(body.id)
+      if (!body.id) return NextResponse.json({ success: false }, { status: 400 })
+      await approveEvent(String(body.id))
 
     } else if (body.action === 'delete-event') {
-      await deleteEvent(body.id)
+      if (!body.id) return NextResponse.json({ success: false }, { status: 400 })
+      await deleteEvent(String(body.id))
 
     } else {
       return NextResponse.json({ success: false, message: 'Action tidak dikenal' }, { status: 400 })
