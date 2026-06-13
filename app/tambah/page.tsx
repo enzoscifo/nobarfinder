@@ -35,6 +35,42 @@ function validateContact(v: string) {
 
 const MAX_WORDS = 300
 
+// ── Shared UI primitives ────────────────────────────────────────
+// min-h-[48px] = target tap 48px (>= 44px rekomendasi Apple/Google)
+const inputCls = [
+  'w-full bg-white border border-stone-300 rounded-xl',
+  'px-4 py-3 min-h-[48px]',           // padding cukup untuk jari
+  'text-base text-stone-900',          // text-base (16px) cegah iOS auto-zoom
+  'placeholder-stone-400',
+  'focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100',
+  'transition-all appearance-none',   // appearance-none: hapus native styling iOS
+].join(' ')
+
+const selectCls = inputCls + ' bg-[url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'%23888\' d=\'M7 10l5 5 5-5z\'/%3E%3C/svg%3E")] bg-no-repeat bg-[right_12px_center] pr-10'
+
+const labelCls = 'block text-sm font-semibold text-stone-700 mb-1.5'
+
+// ── Field wrapper ────────────────────────────────────────────────
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className={labelCls}>{label}</label>
+      {children}
+      {hint && <p className="text-xs text-stone-400 mt-1">{hint}</p>}
+    </div>
+  )
+}
+
+// ── Section header ───────────────────────────────────────────────
+function SectionHead({ emoji, title }: { emoji: string; title: string }) {
+  return (
+    <div className="flex items-center gap-2 pb-3 mb-1 border-b border-stone-100">
+      <span className="text-xl" aria-hidden="true">{emoji}</span>
+      <h2 className="font-display font-bold text-stone-900 text-lg">{title}</h2>
+    </div>
+  )
+}
+
 export default function TambahPage() {
   const [status, setStatus] = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -43,32 +79,25 @@ export default function TambahPage() {
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Venue form
   const [form, setForm] = useState({
     venueName: '', city: '', cityCustom: '', address: '', type: '',
     isFree: 'true', openTime: '', description: '',
-    submitterName: '', submitterContact: '', websiteUrl: '', website: '', // website = honeypot
+    submitterName: '', submitterContact: '', websiteUrl: '',
+    website: '', // honeypot
   })
-
-  // Event sub-form
   const [addEvent, setAddEvent] = useState(false)
   const [eventForm, setEventForm] = useState({
-    title: '', category: 'nobar-bola', eventDate: '', eventDescription: '',
-    eventContact: '',
+    title: '', category: 'nobar-bola', eventDate: '', eventDescription: '', eventContact: '',
   })
   const [contactErr, setContactErr] = useState('')
   const wordCount = countWords(eventForm.eventDescription)
   const wordOver = wordCount > MAX_WORDS
 
-  function update(field: string, value: string) {
-    setForm(f => ({ ...f, [field]: value }))
-  }
-
+  function update(field: string, value: string) { setForm(f => ({ ...f, [field]: value })) }
   function updateEvent(field: string, value: string) {
     setEventForm(f => ({ ...f, [field]: value }))
-    if (field === 'eventContact') {
+    if (field === 'eventContact')
       setContactErr(value && !validateContact(value) ? 'Format: 08xxxxxxxxxx atau @namaakun' : '')
-    }
   }
 
   async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -83,9 +112,8 @@ export default function TambahPage() {
       const data = await res.json()
       if (data.success) setPhotoUrl(data.url)
       else { setErrorMsg(data.message || 'Gagal upload foto'); setPhotoPreview('') }
-    } catch {
-      setErrorMsg('Gagal upload foto. Coba lagi.'); setPhotoPreview('')
-    } finally { setUploading(false) }
+    } catch { setErrorMsg('Gagal upload foto. Coba lagi.'); setPhotoPreview('') }
+    finally { setUploading(false) }
   }
 
   function removePhoto() {
@@ -101,7 +129,6 @@ export default function TambahPage() {
     }
     setStatus('sending'); setErrorMsg('')
     try {
-      // 1. Submit venue
       const venueRes = await fetch('/api/submit-venue', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, photoUrl }),
@@ -110,59 +137,45 @@ export default function TambahPage() {
       if (!venueData.success) {
         setStatus('error'); setErrorMsg(venueData.message || 'Gagal mengirim venue.'); return
       }
-
-      // 2. Submit event (jika diisi) — venueId dari response, atau pakai placeholder
-      //    Event akan di-attach ke venue saat admin approve venue
       if (addEvent && eventForm.title && eventForm.eventDate) {
-        const eventContact = eventForm.eventContact || form.submitterContact
-        // Kirim event dengan venueId sementara — backend akan link ke venue setelah approved
-        // Untuk sekarang simpan ke pending dengan tag venueName sebagai referensi
         await fetch('/api/submit-event-pending', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             venueName: form.venueName,
             venueCity: form.city === 'Lainnya' ? form.cityCustom : form.city,
-            title: eventForm.title,
-            category: eventForm.category,
-            eventDate: eventForm.eventDate,
-            description: eventForm.eventDescription,
+            title: eventForm.title, category: eventForm.category,
+            eventDate: eventForm.eventDate, description: eventForm.eventDescription,
             submitterName: form.submitterName,
-            submitterContact: eventContact,
+            submitterContact: eventForm.eventContact || form.submitterContact,
           }),
         })
       }
-
       setStatus('success')
-    } catch {
-      setStatus('error'); setErrorMsg('Koneksi gagal. Coba lagi.')
-    }
+    } catch { setStatus('error'); setErrorMsg('Koneksi gagal. Coba lagi.') }
   }
 
-  const inputCls = 'w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-all'
-  const labelCls = 'block text-xs font-semibold text-stone-700 mb-1.5'
   const minDate = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 16)
 
+  // ── Success screen ───────────────────────────────────────────────
   if (status === 'success') {
     return (
       <div className="min-h-screen bg-[#FAFAF9]">
         <SiteHeader />
-        <div className="flex items-center justify-center px-4 py-20">
-          <div className="bg-white border border-stone-200 rounded-2xl p-10 text-center max-w-md w-full">
-            <div className="text-5xl mb-4">✅</div>
+        <div className="flex items-center justify-center px-4 py-16">
+          <div className="bg-white border border-stone-200 rounded-2xl p-8 text-center max-w-md w-full">
+            <div className="text-6xl mb-4">✅</div>
             <h1 className="font-display font-black text-stone-900 text-2xl mb-2">Terkirim!</h1>
-            <p className="text-sm text-stone-500 mb-2">
-              Venue <strong className="text-stone-700">{form.venueName}</strong> sudah masuk antrian moderasi.
+            <p className="text-sm text-stone-600 mb-2">
+              Venue <strong>{form.venueName}</strong> sudah masuk antrian moderasi.
             </p>
             {addEvent && eventForm.title && (
               <p className="text-sm text-stone-500 mb-2">
-                Event <strong className="text-stone-700">{eventForm.title}</strong> juga sudah tercatat dan akan ditampilkan setelah venue disetujui.
+                Event <strong>{eventForm.title}</strong> juga tercatat — akan tampil setelah venue disetujui.
               </p>
             )}
-            <p className="text-xs text-stone-400 mb-8">
-              Data akan direview dalam 1×24 jam. Jika disetujui, langsung tampil di halaman kota.
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Link href="/" className="bg-green-700 hover:bg-green-800 text-white font-bold text-sm px-5 py-2.5 rounded-full transition-colors">
+            <p className="text-xs text-stone-400 mb-8">Review dalam 1×24 jam.</p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/" className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold text-sm py-3.5 rounded-xl text-center transition-colors">
                 Ke Beranda
               </Link>
               <button onClick={() => {
@@ -170,7 +183,7 @@ export default function TambahPage() {
                 setForm(f => ({ ...f, venueName: '', address: '', description: '' }))
                 setEventForm({ title: '', category: 'nobar-bola', eventDate: '', eventDescription: '', eventContact: '' })
                 setAddEvent(false)
-              }} className="bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-sm px-5 py-2.5 rounded-full transition-colors">
+              }} className="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-sm py-3.5 rounded-xl transition-colors">
                 + Tambah Lagi
               </button>
             </div>
@@ -180,226 +193,252 @@ export default function TambahPage() {
     )
   }
 
+  // ── Form ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
       <SiteHeader />
-      <main className="max-w-xl mx-auto px-4 py-10">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">📍</div>
-          <h1 className="font-display font-black text-stone-900 text-3xl mb-2">Daftarkan Tempat Nobar</h1>
-          <p className="text-sm text-stone-500">Gratis selamanya. Semua submission dimoderasi dulu — biasanya kurang dari 1×24 jam.</p>
+      <main className="max-w-xl mx-auto px-4 py-8 pb-20">
+
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="font-display font-black text-stone-900 text-3xl mb-1">Daftarkan Venue</h1>
+          <p className="text-sm text-stone-500">Gratis · dimoderasi dalam 1×24 jam</p>
         </div>
 
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="space-y-4" noValidate>
           {/* Honeypot */}
           <input type="text" tabIndex={-1} autoComplete="off" value={form.website}
             onChange={e => update('website', e.target.value)}
             className="absolute opacity-0 pointer-events-none h-0 w-0" aria-hidden="true" />
 
-          {/* ══ BAGIAN 1: VENUE ══ */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-6 space-y-5">
-            <div className="flex items-center gap-2 pb-1 border-b border-stone-100">
-              <span className="text-lg">🏟️</span>
-              <h2 className="font-display font-bold text-stone-900">Data Venue</h2>
-            </div>
+          {/* ══ VENUE ══════════════════════════════════════════════ */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 space-y-5">
+            <SectionHead emoji="🏟️" title="Data Venue" />
 
-            {/* Photo upload */}
-            <div>
-              <label className={labelCls}>Foto Venue (opsional, maks 5MB)</label>
+            {/* Foto */}
+            <Field label="Foto Venue (opsional, maks 5MB)">
               {photoPreview ? (
                 <div className="relative rounded-xl overflow-hidden border border-stone-200">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photoPreview} alt="preview" className="w-full h-48 object-cover" />
+                  <img src={photoPreview} alt="preview" className="w-full h-52 object-cover" />
                   {uploading && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold">Mengupload...</div>
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="bg-white rounded-full px-4 py-2 text-sm font-semibold text-stone-700">Mengupload…</div>
+                    </div>
                   )}
                   {!uploading && photoUrl && (
-                    <div className="absolute top-2 left-2 bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded-full">✓ Foto terupload</div>
+                    <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">✓ Terupload</div>
                   )}
                   <button type="button" onClick={removePhoto}
-                    className="absolute top-2 right-2 bg-white/90 hover:bg-white text-stone-700 w-7 h-7 rounded-full flex items-center justify-center text-sm">✕</button>
+                    className="absolute top-3 right-3 bg-white text-stone-600 w-9 h-9 rounded-full flex items-center justify-center shadow text-lg font-bold"
+                    aria-label="Hapus foto">✕</button>
                 </div>
               ) : (
                 <button type="button" onClick={() => fileRef.current?.click()}
-                  className="w-full border-2 border-dashed border-stone-300 hover:border-green-500 rounded-xl py-8 flex flex-col items-center gap-2 text-stone-400 hover:text-green-700 transition-colors">
-                  <span className="text-3xl">📷</span>
+                  className="w-full border-2 border-dashed border-stone-300 active:border-green-500 rounded-xl py-10 flex flex-col items-center gap-2 text-stone-400 active:text-green-700 transition-colors"
+                  aria-label="Upload foto venue">
+                  <span className="text-4xl">📷</span>
                   <span className="text-sm font-semibold">Tap untuk upload foto</span>
                   <span className="text-xs">JPG, PNG, atau WebP</span>
                 </button>
               )}
-              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhoto} className="hidden" />
-            </div>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhoto} className="hidden" aria-hidden="true" />
+            </Field>
 
-            <div>
-              <label className={labelCls}>Nama Venue *</label>
-              <input required type="text" placeholder="contoh: Kafe Bola Jaya"
-                value={form.venueName} onChange={e => update('venueName', e.target.value)} className={inputCls} />
-            </div>
+            {/* Nama */}
+            <Field label="Nama Venue *">
+              <input required type="text" inputMode="text" autoCapitalize="words"
+                placeholder="Cth: Kafe Bola Jaya"
+                value={form.venueName} onChange={e => update('venueName', e.target.value)}
+                className={inputCls} />
+            </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Kota *</label>
-                <select required value={form.city} onChange={e => update('city', e.target.value)} className={inputCls}>
-                  <option value="">Pilih kota</option>
+            {/* Kota & Tipe — full width di mobile, 2 kolom di sm+ */}
+            <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+              <Field label="Kota *">
+                <select required value={form.city} onChange={e => update('city', e.target.value)} className={selectCls}>
+                  <option value="">Pilih kota…</option>
                   {CITY_LIST.map(c => <option key={c.slug} value={c.name}>{c.emoji} {c.name}</option>)}
                   <option value="Lainnya">🗺️ Kota Lainnya</option>
                 </select>
-              </div>
-              <div>
-                <label className={labelCls}>Tipe Venue *</label>
-                <select required value={form.type} onChange={e => update('type', e.target.value)} className={inputCls}>
-                  <option value="">Pilih tipe</option>
+              </Field>
+              <Field label="Tipe Venue *">
+                <select required value={form.type} onChange={e => update('type', e.target.value)} className={selectCls}>
+                  <option value="">Pilih tipe…</option>
                   {VENUE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
-              </div>
+              </Field>
             </div>
 
+            {/* Kota baru */}
             {form.city === 'Lainnya' && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                <label className={labelCls}>Nama Kota Baru *</label>
-                <input required type="text" placeholder="contoh: Pontianak"
-                  value={form.cityCustom} onChange={e => update('cityCustom', e.target.value)} className={inputCls} />
-                <p className="text-[11px] text-green-700 mt-2">💡 Kamu jadi pelopor nobar di kotamu!</p>
+                <Field label="Nama Kota Baru *" hint="💡 Kamu jadi pelopor nobar di kotamu!">
+                  <input required type="text" inputMode="text" autoCapitalize="words"
+                    placeholder="Cth: Pontianak"
+                    value={form.cityCustom} onChange={e => update('cityCustom', e.target.value)}
+                    className={inputCls} />
+                </Field>
               </div>
             )}
 
-            <div>
-              <label className={labelCls}>Alamat Lengkap *</label>
-              <input required type="text" placeholder="Jl. Contoh No.1, Kecamatan, Kota"
-                value={form.address} onChange={e => update('address', e.target.value)} className={inputCls} />
-            </div>
+            {/* Alamat */}
+            <Field label="Alamat Lengkap *">
+              <input required type="text" inputMode="text" autoCapitalize="sentences"
+                placeholder="Jl. Contoh No.1, Kecamatan, Kota"
+                value={form.address} onChange={e => update('address', e.target.value)}
+                className={inputCls} />
+            </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Biaya Masuk</label>
-                <select value={form.isFree} onChange={e => update('isFree', e.target.value)} className={inputCls}>
+            {/* Biaya & Jam — stacked di mobile */}
+            <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+              <Field label="Biaya Masuk">
+                <select value={form.isFree} onChange={e => update('isFree', e.target.value)} className={selectCls}>
                   <option value="true">✅ Gratis</option>
                   <option value="false">💰 Berbayar / Min. Order</option>
                 </select>
-              </div>
-              <div>
-                <label className={labelCls}>Jam Buka</label>
-                <input type="text" placeholder="contoh: 18.00–24.00"
-                  value={form.openTime} onChange={e => update('openTime', e.target.value)} className={inputCls} />
-              </div>
+              </Field>
+              <Field label="Jam Buka">
+                <input type="text" inputMode="text" placeholder="Cth: 18.00–24.00"
+                  value={form.openTime} onChange={e => update('openTime', e.target.value)}
+                  className={inputCls} />
+              </Field>
             </div>
 
-            <div>
-              <label className={labelCls}>Website / Media Sosial</label>
-              <input type="text" placeholder="https://instagram.com/namaakun atau https://namadomain.com"
-                value={form.websiteUrl} onChange={e => update('websiteUrl', e.target.value)} className={inputCls} />
-            </div>
+            {/* Website */}
+            <Field label="Website / Media Sosial">
+              <input type="url" inputMode="url" autoCapitalize="none" autoCorrect="off"
+                placeholder="https://instagram.com/namaakun"
+                value={form.websiteUrl} onChange={e => update('websiteUrl', e.target.value)}
+                className={inputCls} />
+            </Field>
 
-            <div>
-              <label className={labelCls}>Deskripsi & Fasilitas</label>
-              <textarea rows={3} placeholder="Proyektor 120 inch, AC, kapasitas 50 orang, ada menu paket nobar..."
-                value={form.description} onChange={e => update('description', e.target.value)} className={inputCls + ' resize-none'} />
-            </div>
+            {/* Deskripsi */}
+            <Field label="Deskripsi & Fasilitas">
+              <textarea rows={3} inputMode="text" autoCapitalize="sentences"
+                placeholder="Proyektor 120 inch, AC, kapasitas 50 orang, menu paket nobar…"
+                value={form.description} onChange={e => update('description', e.target.value)}
+                className={inputCls + ' resize-none'} />
+            </Field>
 
             <hr className="border-stone-100" />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Nama Kamu</label>
-                <input type="text" placeholder="opsional"
-                  value={form.submitterName} onChange={e => update('submitterName', e.target.value)} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Kontak (WA/Email) *</label>
-                <input required type="text" placeholder="0812... / email"
-                  value={form.submitterContact} onChange={e => update('submitterContact', e.target.value)} className={inputCls} />
-              </div>
+            {/* Kontak pengirim — stacked di mobile */}
+            <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+              <Field label="Nama Kamu">
+                <input type="text" inputMode="text" autoCapitalize="words" placeholder="Opsional"
+                  value={form.submitterName} onChange={e => update('submitterName', e.target.value)}
+                  className={inputCls} />
+              </Field>
+              <Field label="Kontak (WA / Email) *"
+                hint="Hanya untuk konfirmasi moderasi, tidak ditampilkan publik.">
+                <input required type="text" inputMode="tel" autoCapitalize="none"
+                  placeholder="0812… / email@…"
+                  value={form.submitterContact} onChange={e => update('submitterContact', e.target.value)}
+                  className={inputCls} />
+              </Field>
             </div>
-            <p className="text-[11px] text-stone-400 -mt-2">Kontak hanya untuk konfirmasi moderasi, tidak ditampilkan publik.</p>
           </div>
 
-          {/* ══ BAGIAN 2: EVENT (sub-menu, toggle) ══ */}
+          {/* ══ EVENT (toggle) ═══════════════════════════════════════ */}
           <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
-            <button type="button"
-              onClick={() => setAddEvent(v => !v)}
-              className="w-full flex items-center justify-between px-6 py-4 hover:bg-stone-50 transition-colors">
+            {/* Toggle row — min-h-[64px] supaya mudah di-tap */}
+            <button type="button" onClick={() => setAddEvent(v => !v)}
+              className="w-full min-h-[64px] flex items-center justify-between px-5 py-4 active:bg-stone-50 transition-colors"
+              aria-expanded={addEvent}>
               <div className="flex items-center gap-3">
-                <span className="text-lg">🗓️</span>
+                <span className="text-2xl" aria-hidden="true">🗓️</span>
                 <div className="text-left">
                   <div className="font-bold text-stone-900 text-sm">Tambah Event Sekarang</div>
-                  <div className="text-xs text-stone-400">Opsional · event otomatis hilang setelah 24 jam</div>
+                  <div className="text-xs text-stone-400">Opsional · otomatis hilang setelah 24 jam</div>
                 </div>
               </div>
-              <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${addEvent ? 'bg-green-600' : 'bg-stone-200'}`}>
-                <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${addEvent ? 'translate-x-4' : 'translate-x-0'}`} />
+              {/* Toggle switch */}
+              <div className={`w-12 h-7 rounded-full transition-colors duration-200 flex items-center px-0.5 shrink-0 ${addEvent ? 'bg-green-600' : 'bg-stone-200'}`}
+                role="switch" aria-checked={addEvent}>
+                <div className={`w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-200 ${addEvent ? 'translate-x-5' : 'translate-x-0'}`} />
               </div>
             </button>
 
             {addEvent && (
-              <div className="px-6 pb-6 space-y-4 border-t border-stone-100 pt-5">
-                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-[11px] text-amber-800 leading-relaxed">
-                  ⚠️ Pastikan info event <strong>akurat</strong>. Event akan tampil setelah venue disetujui admin.
-                  Event yang tidak akurat akan dihapus dan dapat dilaporkan pengunjung.
+              <div className="px-5 pb-6 space-y-5 border-t border-stone-100 pt-5">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800 leading-relaxed">
+                  ⚠️ Pastikan info event <strong>akurat</strong>. Event tampil setelah venue disetujui admin, dan otomatis hilang dalam 24 jam.
                 </div>
 
-                <div>
-                  <label className={labelCls}>Judul Event *</label>
-                  <input type="text" placeholder="cth: Nobar Final Piala Dunia 2026"
+                <Field label="Judul Event *">
+                  <input type="text" inputMode="text" autoCapitalize="sentences"
+                    placeholder="Cth: Nobar Final Piala Dunia 2026"
                     value={eventForm.title} onChange={e => updateEvent('title', e.target.value)}
                     className={inputCls} required={addEvent} />
-                </div>
+                </Field>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelCls}>Kategori *</label>
-                    <select value={eventForm.category} onChange={e => updateEvent('category', e.target.value)} className={inputCls}>
+                {/* Kategori & tanggal — stacked di mobile */}
+                <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                  <Field label="Kategori *">
+                    <select value={eventForm.category} onChange={e => updateEvent('category', e.target.value)}
+                      className={selectCls}>
                       {EVENT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Tanggal & Jam *</label>
+                  </Field>
+                  <Field label="Tanggal & Jam *">
+                    {/* Gunakan dua input terpisah agar lebih mobile-friendly */}
                     <input type="datetime-local" min={minDate}
                       value={eventForm.eventDate} onChange={e => updateEvent('eventDate', e.target.value)}
                       className={inputCls} required={addEvent} />
-                  </div>
+                  </Field>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className={labelCls + ' mb-0'}>Deskripsi Event</label>
-                    <span className={`text-[11px] font-medium ${wordOver ? 'text-red-600' : wordCount > 250 ? 'text-amber-600' : 'text-stone-400'}`}>
+                    <span className={`text-xs font-semibold ${wordOver ? 'text-red-600' : wordCount > 250 ? 'text-amber-600' : 'text-stone-400'}`}>
                       {wordCount}/{MAX_WORDS} kata
                     </span>
                   </div>
-                  <textarea rows={4}
-                    placeholder={`Ceritakan detail: siapa yang main, suasana, fasilitas khusus, dress code, dll. Maks ${MAX_WORDS} kata.`}
+                  <textarea rows={4} inputMode="text" autoCapitalize="sentences"
+                    placeholder={`Detail acara: pertandingan apa, jam berapa, fasilitas, dll. Maks ${MAX_WORDS} kata.`}
                     value={eventForm.eventDescription} onChange={e => updateEvent('eventDescription', e.target.value)}
                     className={inputCls + ` resize-none ${wordOver ? '!border-red-400' : ''}`} />
                   {wordOver && <p className="text-xs text-red-600 mt-1">⚠️ Melebihi {MAX_WORDS} kata.</p>}
                 </div>
 
-                <div>
-                  <label className={labelCls}>
-                    Kontak untuk Konfirmasi Event
-                    <span className="text-stone-400 font-normal ml-1">(WA/IG — opsional, default pakai kontak venue)</span>
-                  </label>
-                  <input type="text" placeholder="08xx... atau @namaakun (kosongkan jika sama dengan kontak venue)"
+                <Field label="Kontak Konfirmasi Event"
+                  hint="WA atau IG. Kosongkan jika sama dengan kontak venue.">
+                  <input type="text" inputMode="tel" autoCapitalize="none"
+                    placeholder="08xx… atau @namaakun"
                     value={eventForm.eventContact} onChange={e => updateEvent('eventContact', e.target.value)}
                     className={inputCls + (contactErr ? ' !border-red-400' : '')} />
-                  {contactErr && <p className="text-[11px] text-red-600 mt-1">{contactErr}</p>}
-                </div>
+                  {contactErr && <p className="text-xs text-red-600 mt-1">{contactErr}</p>}
+                </Field>
               </div>
             )}
           </div>
 
+          {/* Error */}
           {(status === 'error' || errorMsg) && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl px-4 py-3">⚠️ {errorMsg}</div>
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
+              <span>⚠️</span><span>{errorMsg}</span>
+            </div>
           )}
 
-          <button type="submit" disabled={status === 'sending' || uploading || wordOver || !!contactErr}
-            className="w-full bg-green-700 hover:bg-green-800 disabled:opacity-60 text-white font-bold text-sm py-3.5 rounded-xl transition-colors">
-            {uploading ? 'Tunggu upload foto...' : status === 'sending' ? 'Mengirim...' : addEvent ? '📨 Kirim Venue + Event' : '📨 Kirim untuk Moderasi'}
-          </button>
+          {/* Submit — besar dan sticky di mobile */}
+          <div className="sticky bottom-4 pt-2">
+            <button type="submit"
+              disabled={status === 'sending' || uploading || wordOver || !!contactErr}
+              className="w-full bg-green-700 hover:bg-green-800 active:bg-green-900 disabled:opacity-50 text-white font-bold text-base py-4 rounded-2xl transition-colors shadow-lg shadow-green-900/20">
+              {uploading ? '📷 Mengunggah foto…'
+                : status === 'sending' ? '⏳ Mengirim…'
+                : addEvent ? '📨 Kirim Venue + Event'
+                : '📨 Kirim untuk Moderasi'}
+            </button>
+          </div>
 
           <p className="text-center text-xs text-stone-400 pb-4">
-            Sudah punya venue terdaftar?{' '}
-            <Link href="/" className="text-green-700 hover:underline font-medium">Cari venue kamu →</Link>
-            {' '}lalu tambah event langsung dari halaman venue.
+            Sudah punya venue?{' '}
+            <Link href="/" className="text-green-700 font-medium">Cari venue kamu →</Link>
+            {' '}lalu tambah event langsung dari halamannya.
           </p>
         </form>
       </main>

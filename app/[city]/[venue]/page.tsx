@@ -131,7 +131,10 @@ export default async function VenuePage({ params }: Props) {
           )}
 
           {venue.phone && (
-            <p className="text-sm text-stone-600 mt-4">📱 {venue.phone}</p>
+            <a href={`tel:${venue.phone}`}
+              className="flex items-center gap-2 mt-4 text-sm text-stone-600 hover:text-green-700 min-h-[44px]">
+              📱 <span>{venue.phone}</span>
+            </a>
           )}
 
           {venue.websiteUrl && (() => {
@@ -149,25 +152,26 @@ export default async function VenuePage({ params }: Props) {
             } catch { /* pakai url asli */ }
             return (
               <a href={venue.websiteUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-3 text-sm text-green-700 hover:text-green-900 font-medium group">
+                className="inline-flex items-center gap-2 mt-2 text-sm text-green-700 hover:text-green-900 font-medium min-h-[44px]">
                 <span>{icon}</span>
-                <span className="underline underline-offset-2 group-hover:no-underline">{label}</span>
+                <span className="underline underline-offset-2">{label}</span>
                 <span className="text-stone-300 text-xs">↗</span>
               </a>
             )
           })()}
 
-          <div className="flex gap-3 mt-6 flex-wrap">
+          {/* CTA buttons — full width di mobile, inline di sm+ */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
             {venue.mapsUrl && (
               <a href={venue.mapsUrl} target="_blank" rel="noopener noreferrer"
-                className="bg-green-700 hover:bg-green-800 text-white font-bold text-sm px-6 py-3 rounded-full transition-colors">
+                className="flex items-center justify-center gap-2 bg-green-700 hover:bg-green-800 active:bg-green-900 text-white font-bold text-sm px-6 py-4 rounded-2xl transition-colors min-h-[52px]">
                 🗺️ Buka di Google Maps
               </a>
             )}
             <a href={`https://wa.me/?text=${encodeURIComponent(`Nobar bareng yuk di ${venue.name}, ${city.name}! https://nobarfinder.com/${citySlug}/${vSlug}`)}`}
               target="_blank" rel="noopener noreferrer"
-              className="bg-white border border-stone-300 hover:border-green-600 text-stone-700 font-bold text-sm px-6 py-3 rounded-full transition-colors">
-              Share WA
+              className="flex items-center justify-center gap-2 bg-white border border-stone-300 hover:border-green-600 active:bg-stone-50 text-stone-700 font-bold text-sm px-6 py-4 rounded-2xl transition-colors min-h-[52px] sm:flex-none flex-1">
+              📲 Share WA
             </a>
           </div>
         </div>
