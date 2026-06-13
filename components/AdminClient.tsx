@@ -495,6 +495,27 @@ function VenueRow({ venue: initialVenue }: { venue: DBVenue }) {
 // ─────────────────────────────────────────────
 // Dashboard
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Logout Button
+// ─────────────────────────────────────────────
+function LogoutButton() {
+  const [busy, setBusy] = useState(false)
+  async function logout() {
+    setBusy(true)
+    await fetch('/api/admin/logout', { method: 'POST' })
+    window.location.href = '/'
+  }
+  return (
+    <button onClick={logout} disabled={busy}
+      className="text-xs text-stone-400 hover:text-red-600 disabled:opacity-50 transition-colors">
+      {busy ? '…' : 'Keluar'}
+    </button>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Dashboard
+// ─────────────────────────────────────────────
 export function AdminDashboard({ venues: initialVenues, events: initialEvents }: { venues: DBVenue[]; events: DBEvent[] }) {
   const [venues, setVenues] = useState(initialVenues)
   const [events, setEvents] = useState(initialEvents)
@@ -537,6 +558,7 @@ export function AdminDashboard({ venues: initialVenues, events: initialEvents }:
               </button>
             )}
             <a href="/" className="text-xs text-stone-500 hover:text-green-700">← Situs</a>
+            <LogoutButton />
           </div>
         </div>
       </header>

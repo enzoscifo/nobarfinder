@@ -63,7 +63,7 @@ export default function VenueSearch({ venues, citySlug, cityName }: Props) {
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none select-none">🔍</span>
           <input
-            type="search"
+            type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={`Cari venue di ${cityName}...`}

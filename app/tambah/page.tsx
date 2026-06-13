@@ -117,6 +117,7 @@ export default function TambahPage() {
   }
 
   function removePhoto() {
+    if (photoPreview) URL.revokeObjectURL(photoPreview)
     setPhotoUrl(''); setPhotoPreview('')
     if (fileRef.current) fileRef.current.value = ''
   }

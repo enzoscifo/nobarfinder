@@ -6,7 +6,6 @@ const BASE = 'https://nobarfinder.com'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
-  const allVenues = await getApprovedVenues()
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE, lastModified: now, changeFrequency: 'daily', priority: 1 },
@@ -21,12 +20,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.9,
   }))
 
-  const venuePages: MetadataRoute.Sitemap = allVenues.map(v => ({
-    url: `${BASE}/${v.city}/${venueSlug(v)}`,
-    lastModified: now,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
+  // Graceful fallback: jika DB down, sitemap tetap valid (hanya tanpa venue pages)
+  let venuePages: MetadataRoute.Sitemap = []
+  try {
+    const allVenues = await getApprovedVenues()
+    venuePages = allVenues.map(v => ({
+      url: `${BASE}/${v.city}/${venueSlug(v)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+  } catch (e) {
+    console.error('[sitemap] DB error, returning partial sitemap:', e)
+  }
 
   return [...staticPages, ...cityPages, ...venuePages]
 }
