@@ -507,15 +507,16 @@ export function AdminDashboard({ venues: initialVenues, events: initialEvents }:
   const shownVenues = filter === 'all' ? venues : filter === 'pending' ? pendingVenues : approvedVenues
 
   const pendingEvents = events.filter(e => e.status === 'pending')
+  const flaggedEvents = events.filter(e => e.status === 'flagged')
   const approvedEvents = events.filter(e => e.status === 'approved')
-  const shownEvents = filter === 'all' ? events : filter === 'pending' ? pendingEvents : approvedEvents
+  const shownEvents = filter === 'all' ? events : filter === 'pending' ? [...pendingEvents, ...flaggedEvents] : approvedEvents
 
   function handleAdded(venue: DBVenue) {
     setVenues(vs => [venue, ...vs])
     setFilter('approved')
   }
 
-  const totalPending = pendingVenues.length + pendingEvents.length
+  const totalPending = pendingVenues.length + pendingEvents.length + flaggedEvents.length
 
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
@@ -564,14 +565,14 @@ export function AdminDashboard({ venues: initialVenues, events: initialEvents }:
           </button>
           <button onClick={() => { setTab('events'); setFilter('pending') }}
             className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${tab === 'events' ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-900'}`}>
-            🗓️ Event {pendingEvents.length > 0 && <span className="ml-1 bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingEvents.length}</span>}
+            🗓️ Event {(pendingEvents.length + flaggedEvents.length) > 0 && <span className="ml-1 bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingEvents.length + flaggedEvents.length}</span>}
           </button>
         </div>
 
         {/* Filter tabs */}
         <div className="flex gap-2 mb-6">
           {([
-            { k: 'pending', label: `Pending (${tab === 'venues' ? pendingVenues.length : pendingEvents.length})` },
+            { k: 'pending', label: `Perlu Tinjau (${tab === 'venues' ? pendingVenues.length : pendingEvents.length + flaggedEvents.length})` },
             { k: 'approved', label: `Approved (${tab === 'venues' ? approvedVenues.length : approvedEvents.length})` },
             { k: 'all', label: `Semua (${tab === 'venues' ? venues.length : events.length})` },
           ] as const).map(f => (
@@ -648,12 +649,13 @@ export function EventRow({ event: initial }: { event: DBEvent }) {
 
   if (done === 'deleted') return null
   const isPending = ev.status === 'pending' && done !== 'approved'
+  const isFlagged = ev.status === 'flagged'
   const d = new Date(ev.eventDate)
   const dateStr = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
   const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className={`bg-white border rounded-xl p-4 ${isPending ? 'border-amber-300' : 'border-stone-200'}`}>
+    <div className={`bg-white border rounded-xl p-4 ${isFlagged ? 'border-red-300 bg-red-50/30' : isPending ? 'border-amber-300' : 'border-stone-200'}`}>
       <div className="flex items-start gap-3">
         <div className="text-2xl shrink-0">{
           ev.category === 'nobar-bola' ? '⚽' : ev.category === 'nobar-film' ? '🎬' :
@@ -662,7 +664,9 @@ export function EventRow({ event: initial }: { event: DBEvent }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-stone-900 text-sm">{ev.title}</span>
-            {isPending
+            {isFlagged
+              ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800">🚩 DILAPORKAN</span>
+              : isPending
               ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">PENDING</span>
               : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800">APPROVED</span>}
           </div>
@@ -677,10 +681,10 @@ export function EventRow({ event: initial }: { event: DBEvent }) {
         </div>
       </div>
       <div className="flex gap-2 mt-3 pt-3 border-t border-stone-100">
-        {isPending && (
+        {(isPending || isFlagged) && (
           <button onClick={() => act('approve-event')} disabled={busy}
             className="flex-1 bg-green-700 hover:bg-green-800 disabled:opacity-60 text-white text-xs font-bold py-2 rounded-lg transition-colors">
-            {busy ? '...' : '✓ Approve'}
+            {busy ? '...' : isFlagged ? '✓ Pulihkan' : '✓ Approve'}
           </button>
         )}
         {done === 'approved' && (

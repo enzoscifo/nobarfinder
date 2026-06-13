@@ -12,6 +12,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: `Field "${f}" wajib diisi` }, { status: 400 })
   }
 
+  // Validasi format kontak: nomor WA (10-13 digit) atau akun IG/X (@namaakun)
+  const contact = body.submitterContact.trim()
+  const isWA = /^(\+62|62|0)[\d]{9,12}$/.test(contact.replace(/[\s-]/g, ''))
+  const isSocmed = /^@[\w.]{3,30}$/.test(contact)
+  if (!isWA && !isSocmed) {
+    return NextResponse.json({
+      success: false,
+      message: 'Kontak harus berupa nomor WA (cth: 08123456789) atau akun medsos (cth: @namaakun)',
+    }, { status: 400 })
+  }
+
   if (body.description) {
     const wordCount = body.description.trim().split(/\s+/).filter(Boolean).length
     if (wordCount > 300)

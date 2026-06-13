@@ -204,7 +204,7 @@ export interface DBEvent {
   category: string    // nobar-bola | nobar-film | nobar-anime | komunitas | lainnya
   submitterName?: string
   submitterContact?: string
-  status: 'pending' | 'approved'
+  status: 'pending' | 'approved' | 'flagged'
   createdAt?: string
 }
 
@@ -240,12 +240,12 @@ function rowToEvent(r: Record<string, unknown>): DBEvent {
     category: (r.category as string) || 'lainnya',
     submitterName: r.submitter_name as string | undefined,
     submitterContact: r.submitter_contact as string | undefined,
-    status: r.status as 'pending' | 'approved',
+    status: r.status as 'pending' | 'approved' | 'flagged',
     createdAt: r.created_at ? String(r.created_at) : undefined,
   }
 }
 
-// READ: event approved untuk satu venue
+// READ: event approved untuk satu venue (flagged tidak tampil publik)
 export async function getEventsByVenue(venueId: string): Promise<DBEvent[]> {
   if (!DB_ENABLED) return []
   await ensureEventsSchema()
@@ -273,14 +273,16 @@ export async function getUpcomingEventsByCity(citySlug: string): Promise<DBEvent
   return rows.map(rowToEvent)
 }
 
-// READ: semua event (admin)
+// READ: semua event (admin) — termasuk flagged
 export async function getAllEventsAdmin(): Promise<DBEvent[]> {
   if (!DB_ENABLED) return []
   await ensureEventsSchema()
   const { rows } = await sql`
     SELECT e.*, v.name AS venue_name, v.city AS venue_city
     FROM events e LEFT JOIN venues v ON v.id = e.venue_id
-    ORDER BY e.status ASC, e.event_date ASC
+    ORDER BY
+      CASE e.status WHEN 'flagged' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
+      e.event_date ASC
   `
   return rows.map(rowToEvent)
 }
