@@ -495,19 +495,27 @@ function VenueRow({ venue: initialVenue }: { venue: DBVenue }) {
 // ─────────────────────────────────────────────
 // Dashboard
 // ─────────────────────────────────────────────
-export function AdminDashboard({ venues: initialVenues }: { venues: DBVenue[] }) {
+export function AdminDashboard({ venues: initialVenues, events: initialEvents }: { venues: DBVenue[]; events: DBEvent[] }) {
   const [venues, setVenues] = useState(initialVenues)
+  const [events, setEvents] = useState(initialEvents)
+  const [tab, setTab] = useState<'venues' | 'events'>('venues')
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('pending')
   const [showAdd, setShowAdd] = useState(false)
 
-  const pending = venues.filter(v => v.status === 'pending')
-  const approved = venues.filter(v => v.status === 'approved')
-  const shown = filter === 'all' ? venues : filter === 'pending' ? pending : approved
+  const pendingVenues = venues.filter(v => v.status === 'pending')
+  const approvedVenues = venues.filter(v => v.status === 'approved')
+  const shownVenues = filter === 'all' ? venues : filter === 'pending' ? pendingVenues : approvedVenues
+
+  const pendingEvents = events.filter(e => e.status === 'pending')
+  const approvedEvents = events.filter(e => e.status === 'approved')
+  const shownEvents = filter === 'all' ? events : filter === 'pending' ? pendingEvents : approvedEvents
 
   function handleAdded(venue: DBVenue) {
     setVenues(vs => [venue, ...vs])
     setFilter('approved')
   }
+
+  const totalPending = pendingVenues.length + pendingEvents.length
 
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
@@ -521,36 +529,51 @@ export function AdminDashboard({ venues: initialVenues }: { venues: DBVenue[] })
             NOBAR<span className="text-green-700">FINDER</span> <span className="text-stone-400 text-sm font-normal">Admin</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowAdd(true)}
-              className="bg-green-700 hover:bg-green-800 text-white text-xs font-bold px-4 py-2 rounded-full transition-colors">
-              ➕ Tambah Venue
-            </button>
+            {tab === 'venues' && (
+              <button onClick={() => setShowAdd(true)}
+                className="bg-green-700 hover:bg-green-800 text-white text-xs font-bold px-4 py-2 rounded-full transition-colors">
+                ➕ Tambah Venue
+              </button>
+            )}
             <a href="/" className="text-xs text-stone-500 hover:text-green-700">← Situs</a>
           </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
-        {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
           {[
-            { label: 'Total', count: venues.length, color: 'stone' },
-            { label: 'Pending', count: pending.length, color: pending.length > 0 ? 'amber' : 'stone' },
-            { label: 'Approved', count: approved.length, color: 'green' },
+            { label: 'Venue', count: venues.length, color: 'stone' },
+            { label: 'Event', count: events.length, color: 'stone' },
+            { label: 'Pending', count: totalPending, color: totalPending > 0 ? 'amber' : 'stone' },
+            { label: 'Approved', count: approvedVenues.length + approvedEvents.length, color: 'green' },
           ].map(s => (
             <div key={s.label} className="bg-white border border-stone-200 rounded-xl p-3 text-center">
-              <div className={`text-2xl font-black ${s.color === 'amber' && s.count > 0 ? 'text-amber-600' : s.color === 'green' ? 'text-green-700' : 'text-stone-700'}`}>{s.count}</div>
+              <div className={`text-xl font-black ${s.color === 'amber' && s.count > 0 ? 'text-amber-600' : s.color === 'green' ? 'text-green-700' : 'text-stone-700'}`}>{s.count}</div>
               <div className="text-[10px] text-stone-500 font-medium uppercase tracking-wide">{s.label}</div>
             </div>
           ))}
         </div>
 
+        {/* Tab switcher */}
+        <div className="flex gap-2 mb-5">
+          <button onClick={() => { setTab('venues'); setFilter('pending') }}
+            className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${tab === 'venues' ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-900'}`}>
+            🏟️ Venue {pendingVenues.length > 0 && <span className="ml-1 bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingVenues.length}</span>}
+          </button>
+          <button onClick={() => { setTab('events'); setFilter('pending') }}
+            className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${tab === 'events' ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-900'}`}>
+            🗓️ Event {pendingEvents.length > 0 && <span className="ml-1 bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingEvents.length}</span>}
+          </button>
+        </div>
+
         {/* Filter tabs */}
         <div className="flex gap-2 mb-6">
           {([
-            { k: 'pending', label: `Pending (${pending.length})` },
-            { k: 'approved', label: `Approved (${approved.length})` },
-            { k: 'all', label: `Semua (${venues.length})` },
+            { k: 'pending', label: `Pending (${tab === 'venues' ? pendingVenues.length : pendingEvents.length})` },
+            { k: 'approved', label: `Approved (${tab === 'venues' ? approvedVenues.length : approvedEvents.length})` },
+            { k: 'all', label: `Semua (${tab === 'venues' ? venues.length : events.length})` },
           ] as const).map(f => (
             <button key={f.k} onClick={() => setFilter(f.k)}
               className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
@@ -561,25 +584,113 @@ export function AdminDashboard({ venues: initialVenues }: { venues: DBVenue[] })
           ))}
         </div>
 
-        {shown.length === 0 ? (
-          <div className="bg-white border border-stone-200 rounded-2xl py-16 text-center text-stone-400">
-            <div className="text-3xl mb-2">{filter === 'pending' ? '📭' : '🏟️'}</div>
-            <p className="text-sm">
-              {filter === 'pending' ? 'Tidak ada submission pending' : 'Belum ada venue'}
-            </p>
-            {filter !== 'pending' && (
-              <button onClick={() => setShowAdd(true)}
-                className="mt-4 bg-green-700 text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-green-800 transition-colors">
-                ➕ Tambah Venue Pertama
-              </button>
-            )}
-          </div>
+        {/* Content */}
+        {tab === 'venues' ? (
+          shownVenues.length === 0 ? (
+            <div className="bg-white border border-stone-200 rounded-2xl py-16 text-center text-stone-400">
+              <div className="text-3xl mb-2">{filter === 'pending' ? '📭' : '🏟️'}</div>
+              <p className="text-sm">{filter === 'pending' ? 'Tidak ada venue pending' : 'Belum ada venue'}</p>
+              {filter !== 'pending' && (
+                <button onClick={() => setShowAdd(true)}
+                  className="mt-4 bg-green-700 text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-green-800 transition-colors">
+                  ➕ Tambah Venue Pertama
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {shownVenues.map(v => <VenueRow key={v.id} venue={v} />)}
+            </div>
+          )
         ) : (
-          <div className="space-y-3">
-            {shown.map(v => <VenueRow key={v.id} venue={v} />)}
-          </div>
+          shownEvents.length === 0 ? (
+            <div className="bg-white border border-stone-200 rounded-2xl py-16 text-center text-stone-400">
+              <div className="text-3xl mb-2">{filter === 'pending' ? '📭' : '🗓️'}</div>
+              <p className="text-sm">{filter === 'pending' ? 'Tidak ada event pending' : 'Belum ada event'}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {shownEvents.map(e => <EventRow key={e.id} event={e} />)}
+            </div>
+          )
         )}
       </main>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Event Row (admin)
+// ─────────────────────────────────────────────
+import { DBEvent } from '@/lib/db'
+
+const CAT_LABEL_ADMIN: Record<string, string> = {
+  'nobar-bola': '⚽ Nobar Bola', 'nobar-film': '🎬 Nobar Film',
+  'nobar-anime': '🎌 Nobar Anime', 'komunitas': '🤝 Komunitas', 'lainnya': '📅 Event',
+}
+
+export function EventRow({ event: initial }: { event: DBEvent }) {
+  const [ev, setEv] = useState(initial)
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState<'approved' | 'deleted' | null>(null)
+
+  async function act(action: 'approve-event' | 'delete-event') {
+    if (action === 'delete-event' && !confirm(`Hapus event "${ev.title}"?`)) return
+    setBusy(true)
+    const res = await fetch('/api/admin/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, id: ev.id }),
+    })
+    const data = await res.json()
+    if (data.success) setDone(action === 'approve-event' ? 'approved' : 'deleted')
+    else { alert(data.message || 'Gagal'); setBusy(false) }
+  }
+
+  if (done === 'deleted') return null
+  const isPending = ev.status === 'pending' && done !== 'approved'
+  const d = new Date(ev.eventDate)
+  const dateStr = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
+  const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+
+  return (
+    <div className={`bg-white border rounded-xl p-4 ${isPending ? 'border-amber-300' : 'border-stone-200'}`}>
+      <div className="flex items-start gap-3">
+        <div className="text-2xl shrink-0">{
+          ev.category === 'nobar-bola' ? '⚽' : ev.category === 'nobar-film' ? '🎬' :
+          ev.category === 'nobar-anime' ? '🎌' : ev.category === 'komunitas' ? '🤝' : '📅'
+        }</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-stone-900 text-sm">{ev.title}</span>
+            {isPending
+              ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">PENDING</span>
+              : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800">APPROVED</span>}
+          </div>
+          <p className="text-xs text-stone-500 mt-1">
+            📍 {ev.venueName || ev.venueId} · {CAT_LABEL_ADMIN[ev.category]}
+          </p>
+          <p className="text-xs text-stone-400 mt-0.5">🕐 {dateStr} · {timeStr} WIB</p>
+          {ev.description && <p className="text-[11px] text-stone-500 mt-1 italic line-clamp-2">{ev.description}</p>}
+          {ev.submitterContact && (
+            <p className="text-[11px] text-stone-400 mt-1">👤 {ev.submitterName || '-'} · {ev.submitterContact}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex gap-2 mt-3 pt-3 border-t border-stone-100">
+        {isPending && (
+          <button onClick={() => act('approve-event')} disabled={busy}
+            className="flex-1 bg-green-700 hover:bg-green-800 disabled:opacity-60 text-white text-xs font-bold py-2 rounded-lg transition-colors">
+            {busy ? '...' : '✓ Approve'}
+          </button>
+        )}
+        {done === 'approved' && (
+          <span className="flex-1 text-center text-xs font-bold text-green-700 py-2">✓ Disetujui</span>
+        )}
+        <button onClick={() => act('delete-event')} disabled={busy}
+          className="flex-1 bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-700 text-xs font-bold py-2 rounded-lg transition-colors border border-red-200">
+          🗑️ Hapus
+        </button>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { isAdmin } from '@/lib/auth'
-import { getAllVenuesAdmin, DB_ENABLED } from '@/lib/db'
+import { getAllVenuesAdmin, getAllEventsAdmin, DB_ENABLED } from '@/lib/db'
 import { LoginForm, AdminDashboard } from '@/components/AdminClient'
 
 export const dynamic = 'force-dynamic'
@@ -23,6 +23,10 @@ export default async function AdminPage() {
 
   if (!(await isAdmin())) return <LoginForm />
 
-  const venues = await getAllVenuesAdmin()
-  return <AdminDashboard venues={venues} />
+  const [venues, events] = await Promise.all([
+    getAllVenuesAdmin(),
+    getAllEventsAdmin(),
+  ])
+
+  return <AdminDashboard venues={venues} events={events} />
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { isAdmin } from '@/lib/auth'
-import { approveVenue, deleteVenue, updateVenue, updateVenueFull, insertVenueAdmin } from '@/lib/db'
+import { approveVenue, deleteVenue, updateVenue, updateVenueFull, insertVenueAdmin, approveEvent, deleteEvent } from '@/lib/db'
 
 export async function POST(request: Request) {
   if (!(await isAdmin())) {
@@ -51,6 +51,12 @@ export async function POST(request: Request) {
       })
       revalidatePath('/', 'layout')
       return NextResponse.json({ success: true, id })
+
+    } else if (body.action === 'approve-event') {
+      await approveEvent(body.id)
+
+    } else if (body.action === 'delete-event') {
+      await deleteEvent(body.id)
 
     } else {
       return NextResponse.json({ success: false, message: 'Action tidak dikenal' }, { status: 400 })

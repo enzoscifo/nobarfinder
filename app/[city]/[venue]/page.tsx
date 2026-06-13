@@ -3,8 +3,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
 import { CITY_LIST, getCityBySlug, venueSlug } from '@/lib/data'
-import { getApprovedByCity } from '@/lib/db'
+import { getApprovedByCity, getEventsByVenue } from '@/lib/db'
 import { NobarVenue } from '@/types'
+import EventSection from '@/components/EventSection'
 
 interface Props { params: Promise<{ city: string; venue: string }> }
 
@@ -12,7 +13,7 @@ export const revalidate = 60
 export const dynamicParams = true
 
 export async function generateStaticParams() {
-  return [] // venue pages dirender on-demand (data dari DB), lalu di-cache
+  return []
 }
 
 async function findVenue(citySlug: string, vSlug: string): Promise<NobarVenue | undefined> {
@@ -49,10 +50,12 @@ export default async function VenuePage({ params }: Props) {
   const venue = await findVenue(citySlug, vSlug)
   if (!city || !venue) notFound()
 
-  const cityVenues = await getApprovedByCity(citySlug)
+  const [cityVenues, events] = await Promise.all([
+    getApprovedByCity(citySlug),
+    getEventsByVenue(venue.id),
+  ])
   const related = cityVenues.filter(v => venueSlug(v) !== vSlug).slice(0, 3)
 
-  // Schema.org LocalBusiness
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
@@ -92,6 +95,13 @@ export default async function VenuePage({ params }: Props) {
           }>
             {venue.isFree ? 'GRATIS MASUK' : 'BERBAYAR'}
           </span>
+          {/* Tombol Maps di foto */}
+          {venue.mapsUrl && (
+            <a href={venue.mapsUrl} target="_blank" rel="noopener noreferrer"
+              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-stone-800 text-xs font-bold px-3 py-1.5 rounded-full shadow flex items-center gap-1.5 transition-all">
+              🗺️ Buka Maps
+            </a>
+          )}
         </div>
 
         {/* Info */}
@@ -136,12 +146,14 @@ export default async function VenuePage({ params }: Props) {
             )
           })()}
 
-          <div className="flex gap-3 mt-6">
-            <a href={venue.mapsUrl} target="_blank" rel="noopener noreferrer"
-              className="bg-green-700 hover:bg-green-800 text-white font-bold text-sm px-6 py-3 rounded-full transition-colors">
-              🗺️ Buka di Google Maps
-            </a>
-            <a href={`https://wa.me/?text=${encodeURIComponent(`Nobar bareng yuk di ${venue.name}, ${city.name}! ${`https://nobarfinder.com/${citySlug}/${vSlug}`}`)}`}
+          <div className="flex gap-3 mt-6 flex-wrap">
+            {venue.mapsUrl && (
+              <a href={venue.mapsUrl} target="_blank" rel="noopener noreferrer"
+                className="bg-green-700 hover:bg-green-800 text-white font-bold text-sm px-6 py-3 rounded-full transition-colors">
+                🗺️ Buka di Google Maps
+              </a>
+            )}
+            <a href={`https://wa.me/?text=${encodeURIComponent(`Nobar bareng yuk di ${venue.name}, ${city.name}! https://nobarfinder.com/${citySlug}/${vSlug}`)}`}
               target="_blank" rel="noopener noreferrer"
               className="bg-white border border-stone-300 hover:border-green-600 text-stone-700 font-bold text-sm px-6 py-3 rounded-full transition-colors">
               Share WA
@@ -156,6 +168,9 @@ export default async function VenuePage({ params }: Props) {
             <Link href="/tambah" className="text-xs font-bold text-green-700 whitespace-nowrap hover:text-green-900">Kirim foto →</Link>
           </div>
         )}
+
+        {/* ── Events Section (client component) ── */}
+        <EventSection venueId={venue.id} venueName={venue.name} initialEvents={events} />
 
         {/* Related */}
         {related.length > 0 && (

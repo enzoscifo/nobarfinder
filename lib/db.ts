@@ -188,3 +188,128 @@ export async function deleteVenue(id: string) {
 }
 
 export { DB_ENABLED }
+
+// ════════════════════════════════════════════
+// EVENTS
+// ════════════════════════════════════════════
+
+export interface DBEvent {
+  id: string
+  venueId: string
+  venueName?: string
+  venueCity?: string
+  title: string
+  description?: string
+  eventDate: string   // ISO string
+  category: string    // nobar-bola | nobar-film | nobar-anime | komunitas | lainnya
+  submitterName?: string
+  submitterContact?: string
+  status: 'pending' | 'approved'
+  createdAt?: string
+}
+
+async function ensureEventsSchema() {
+  if (!DB_ENABLED) return
+  await sql`
+    CREATE TABLE IF NOT EXISTS events (
+      id TEXT PRIMARY KEY,
+      venue_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      event_date TIMESTAMPTZ NOT NULL,
+      category TEXT DEFAULT 'lainnya',
+      submitter_name TEXT,
+      submitter_contact TEXT,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `
+  // migrasi — idempotent
+  await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'lainnya'`
+}
+
+function rowToEvent(r: Record<string, unknown>): DBEvent {
+  return {
+    id: r.id as string,
+    venueId: r.venue_id as string,
+    venueName: r.venue_name as string | undefined,
+    venueCity: r.venue_city as string | undefined,
+    title: r.title as string,
+    description: r.description as string | undefined,
+    eventDate: r.event_date ? String(r.event_date) : '',
+    category: (r.category as string) || 'lainnya',
+    submitterName: r.submitter_name as string | undefined,
+    submitterContact: r.submitter_contact as string | undefined,
+    status: r.status as 'pending' | 'approved',
+    createdAt: r.created_at ? String(r.created_at) : undefined,
+  }
+}
+
+// READ: event approved untuk satu venue
+export async function getEventsByVenue(venueId: string): Promise<DBEvent[]> {
+  if (!DB_ENABLED) return []
+  await ensureEventsSchema()
+  const { rows } = await sql`
+    SELECT e.*, v.name AS venue_name, v.city AS venue_city
+    FROM events e LEFT JOIN venues v ON v.id = e.venue_id
+    WHERE e.venue_id = ${venueId} AND e.status = 'approved'
+    ORDER BY e.event_date ASC
+  `
+  return rows.map(rowToEvent)
+}
+
+// READ: semua event approved (untuk halaman kota — upcoming)
+export async function getUpcomingEventsByCity(citySlug: string): Promise<DBEvent[]> {
+  if (!DB_ENABLED) return []
+  await ensureEventsSchema()
+  const { rows } = await sql`
+    SELECT e.*, v.name AS venue_name, v.city AS venue_city
+    FROM events e LEFT JOIN venues v ON v.id = e.venue_id
+    WHERE v.city = ${citySlug} AND e.status = 'approved'
+      AND e.event_date >= NOW() - INTERVAL '3 hours'
+    ORDER BY e.event_date ASC
+    LIMIT 10
+  `
+  return rows.map(rowToEvent)
+}
+
+// READ: semua event (admin)
+export async function getAllEventsAdmin(): Promise<DBEvent[]> {
+  if (!DB_ENABLED) return []
+  await ensureEventsSchema()
+  const { rows } = await sql`
+    SELECT e.*, v.name AS venue_name, v.city AS venue_city
+    FROM events e LEFT JOIN venues v ON v.id = e.venue_id
+    ORDER BY e.status ASC, e.event_date ASC
+  `
+  return rows.map(rowToEvent)
+}
+
+// CREATE: submit event baru (pending)
+export async function insertEvent(data: {
+  venueId: string; title: string; description?: string
+  eventDate: string; category: string
+  submitterName?: string; submitterContact?: string
+}): Promise<string> {
+  await ensureEventsSchema()
+  const id = `ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  await sql`
+    INSERT INTO events (id, venue_id, title, description, event_date, category, submitter_name, submitter_contact, status)
+    VALUES (${id}, ${data.venueId}, ${data.title}, ${data.description || null},
+            ${data.eventDate}, ${data.category}, ${data.submitterName || null},
+            ${data.submitterContact || null}, 'pending')
+  `
+  return id
+}
+
+// UPDATE: approve event
+export async function approveEvent(id: string) {
+  await ensureEventsSchema()
+  await sql`UPDATE events SET status = 'approved' WHERE id = ${id}`
+}
+
+// DELETE: hapus event
+export async function deleteEvent(id: string) {
+  await ensureEventsSchema()
+  await sql`DELETE FROM events WHERE id = ${id}`
+}
