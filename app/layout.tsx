@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: 'NobarFinder — Cari Tempat Nonton Bareng di Indonesia',
   description: 'Direktori tempat nonton bareng (nobar) terlengkap di Indonesia. Temukan venue nobar bola di kotamu — gratis maupun berbayar, outdoor sampai kafe ber-AC.',
   keywords: ['nobar', 'nonton bareng', 'tempat nobar', 'nobar bola', 'venue nobar indonesia'],
+  verification: {
+    google: 'phEc3qgsve2b7msf_gEXx1dhwLJwyCp1iOzvPY06aJo',
+  },
   openGraph: {
     title: 'NobarFinder — Cari Tempat Nobar di Indonesia',
     description: 'Direktori tempat nonton bareng terlengkap di Indonesia 🇮🇩⚽',
