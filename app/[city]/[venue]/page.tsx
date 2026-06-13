@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
+import PageWrapper from '@/components/PageWrapper'
 import { CITY_LIST, getCityBySlug, venueSlug } from '@/lib/data'
 import { getApprovedByCity, getEventsByVenue } from '@/lib/db'
 import { NobarVenue } from '@/types'
@@ -73,6 +74,7 @@ export default async function VenuePage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <SiteHeader />
 
+      <PageWrapper>
       <main className="max-w-3xl mx-auto px-4 py-8">
         <div className="text-xs text-stone-400 mb-4">
           <Link href="/" className="hover:text-green-700">Beranda</Link>
@@ -198,6 +200,7 @@ export default async function VenuePage({ params }: Props) {
           </div>
         )}
       </main>
+      </PageWrapper>
 
       <footer className="bg-white border-t border-stone-200 py-8 text-center text-xs text-stone-400 mt-8">
         © 2026 NobarFinder.com · <Link href={`/${citySlug}`} className="hover:text-green-700">Kembali ke {city.name}</Link>

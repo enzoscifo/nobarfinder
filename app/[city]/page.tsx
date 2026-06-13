@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
+import PageWrapper from '@/components/PageWrapper'
 import { CITY_LIST, getCityBySlug, venueSlug } from '@/lib/data'
 import { getApprovedByCity, getUpcomingEventsByCity } from '@/lib/db'
 
@@ -107,6 +108,7 @@ export default async function CityPage({ params }: Props) {
         </div>
       </section>
 
+      <PageWrapper>
       <main className="max-w-5xl mx-auto px-4 py-8">
 
         {/* ── Upcoming Events ── */}
@@ -227,6 +229,7 @@ export default async function CityPage({ params }: Props) {
           </Link>
         </div>
       </main>
+      </PageWrapper>
 
       <footer className="bg-white border-t border-stone-200 py-8 text-center text-xs text-stone-400">
         © 2026 NobarFinder.com · <Link href="/" className="hover:text-green-700">Semua Kota</Link>

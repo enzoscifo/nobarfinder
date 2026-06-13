@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
+import PageWrapper from '@/components/PageWrapper'
 import { CITY_LIST } from '@/lib/data'
 import { getApprovedVenues } from '@/lib/db'
 
@@ -55,6 +56,7 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <PageWrapper>
       <main id="kota" className="max-w-5xl mx-auto px-4 py-14">
         <div className="flex items-baseline justify-between mb-6">
           <h2 className="font-display font-bold text-2xl text-stone-900">Pilih Kotamu</h2>
@@ -87,6 +89,7 @@ export default async function HomePage() {
           </Link>
         </div>
       </main>
+      </PageWrapper>
 
       <footer className="bg-white border-t border-stone-200 py-10">
         <div className="max-w-5xl mx-auto px-4">

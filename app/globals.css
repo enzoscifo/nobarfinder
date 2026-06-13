@@ -4,6 +4,29 @@
   html { scroll-behavior: smooth; }
   body { background-color: #FAFAF9; color: #1c1917; }
 }
+
 @layer utilities {
   .font-display { font-family: 'Barlow Condensed', 'Impact', system-ui, sans-serif; }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    background: linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: 0.5rem;
+  }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Page transition fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: fadeIn 0.25s ease-out both;
 }
