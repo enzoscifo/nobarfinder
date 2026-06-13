@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         isFree: body.isFree === 'true',
         openTime,
         phone: phone || undefined,
-        photoUrl: body.photoUrl || undefined,
+        photoUrl: body.photoUrl && isValidUrl(body.photoUrl) ? body.photoUrl : undefined,
         websiteUrl: websiteUrl || undefined,
         description: description || undefined,
         submitterName: submitterName || undefined,

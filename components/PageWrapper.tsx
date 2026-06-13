@@ -2,25 +2,26 @@
 
 import { useEffect, useRef } from 'react'
 
-/**
- * Bungkus konten halaman dengan animasi fade-in saat mount.
- * Dipakai di halaman yang sudah server-rendered supaya tetap ada
- * transisi visual yang halus.
- */
-export default function PageWrapper({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+export default function PageWrapper({ children, className = '' }: {
+  children: React.ReactNode
+  className?: string
+}) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    // Set initial state
     el.style.opacity = '0'
-    el.style.transform = 'translateY(8px)'
-    // Satu frame delay supaya browser sempat paint dulu
-    requestAnimationFrame(() => {
-      el.style.transition = 'opacity 0.22s ease-out, transform 0.22s ease-out'
+    el.style.transform = 'translateY(6px)'
+    // rAF: pastikan browser sudah paint sebelum animasi
+    const id = requestAnimationFrame(() => {
+      if (!el) return
+      el.style.transition = 'opacity 0.2s ease-out, transform 0.2s ease-out'
       el.style.opacity = '1'
       el.style.transform = 'translateY(0)'
     })
+    return () => cancelAnimationFrame(id)
   }, [])
 
   return (

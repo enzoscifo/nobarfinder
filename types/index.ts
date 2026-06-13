@@ -3,13 +3,13 @@ export interface CityInfo {
   name: string
   emoji: string
   province: string
-  description: string
+  description: string // deskripsi kota untuk SEO
 }
 
 export interface NobarVenue {
   id: string
   name: string
-  city: string // slug
+  city: string        // slug kota
   address: string
   type: 'outdoor' | 'cafe' | 'resto' | 'mall' | 'komunitas'
   icon: string
@@ -18,9 +18,9 @@ export interface NobarVenue {
   openTime: string
   mapsUrl: string
   phone?: string
-  photoUrl?: string // approved photo
-  websiteUrl?: string // link ke web/medsos venue
-  description?: string // deskripsi & fasilitas venue
+  photoUrl?: string
+  websiteUrl?: string
+  description?: string // deskripsi & fasilitas venue (tampil publik)
 }
 
 export interface VenueSubmission {
@@ -31,8 +31,9 @@ export interface VenueSubmission {
   type: string
   isFree: string
   openTime: string
-  description: string
+  description?: string // opsional
   submitterName: string
   submitterContact: string
   photoUrl?: string
+  websiteUrl?: string
 }
