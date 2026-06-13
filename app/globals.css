@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { background-color: #FAFAF9; color: #1c1917; }
+}
+@layer utilities {
+  .font-display { font-family: 'Barlow Condensed', 'Impact', system-ui, sans-serif; }
+}
