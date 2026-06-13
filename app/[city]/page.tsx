@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
 import PageWrapper from '@/components/PageWrapper'
-import { CITY_LIST, getCityBySlug, venueSlug } from '@/lib/data'
+import VenueSearch from '@/components/VenueSearch'
+import { CITY_LIST, getCityBySlug } from '@/lib/data'
 import { getApprovedByCity, getUpcomingEventsByCity } from '@/lib/db'
 
 interface Props { params: Promise<{ city: string }> }
@@ -24,10 +25,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     keywords: [`nobar ${city.name.toLowerCase()}`, `tempat nonton bareng ${city.name.toLowerCase()}`, `nobar bola ${city.name.toLowerCase()}`],
     openGraph: { title: `Tempat Nobar di ${city.name}`, description: city.description },
   }
-}
-
-const TYPE_LABEL: Record<string, string> = {
-  outdoor: '🏟️ Outdoor', cafe: '☕ Kafe', resto: '🍽️ Resto', mall: '🛍️ Mall', komunitas: '⚽ Komunitas',
 }
 
 const CAT_LABEL: Record<string, string> = {
@@ -70,7 +67,7 @@ export default async function CityPage({ params }: Props) {
     numberOfItems: venues.length,
     itemListElement: venues.map((v, i) => ({
       '@type': 'ListItem', position: i + 1, name: v.name,
-      url: `https://nobarfinder.com/${slug}/${venueSlug(v)}`,
+      url: `https://nobarfinder.com/${slug}/${v.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
     })),
   }
 
@@ -144,7 +141,7 @@ export default async function CityPage({ params }: Props) {
           </div>
         )}
 
-        {/* ── Venue Grid ── */}
+        {/* ── Venue Grid + Search ── */}
         {venues.length === 0 ? (
           <div className="bg-white border border-stone-200 rounded-2xl py-16 text-center">
             <div className="text-4xl mb-3">🔍</div>
@@ -157,53 +154,7 @@ export default async function CityPage({ params }: Props) {
         ) : (
           <>
             <h2 className="font-display font-bold text-stone-900 text-xl mb-4">Semua Venue</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {venues.map(venue => (
-                  <div key={venue.id} className="bg-white border border-stone-200 rounded-2xl overflow-hidden hover:border-green-600 hover:shadow-md transition-all relative group">
-                  {/* Photo — klik ke detail */}
-                  <Link href={`/${slug}/${venueSlug(venue)}`} className="block">
-                    <div className="h-44 bg-stone-100 relative flex items-center justify-center">
-                      {venue.photoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={venue.photoUrl} alt={venue.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="text-5xl opacity-30">{venue.icon}</div>
-                      )}
-                      <span className={
-                        venue.isFree
-                          ? 'absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-600 text-white'
-                          : 'absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500 text-white'
-                      }>
-                        {venue.isFree ? 'GRATIS' : 'BAYAR'}
-                      </span>
-                      {/* Tombol Maps — pojok kanan atas, link terpisah dari Link wrapper */}
-                    </div>
-                  </Link>
-                  {venue.mapsUrl && (
-                    <a href={venue.mapsUrl} target="_blank" rel="noopener noreferrer"
-                      className="absolute top-3 right-3 bg-white/90 hover:bg-white text-stone-700 hover:text-green-700 text-[11px] font-bold px-2.5 py-1.5 rounded-full shadow-sm flex items-center gap-1 transition-all backdrop-blur-sm border border-white/60 z-10
-                        md:opacity-0 md:group-hover:opacity-100">
-                      🗺️ Maps
-                    </a>
-                  )}
-                  {/* Info — klik ke detail */}
-                  <Link href={`/${slug}/${venueSlug(venue)}`} className="block p-5">
-                    <h2 className="font-display font-bold text-stone-900 text-lg leading-tight">{venue.name}</h2>
-                    <p className="text-xs text-stone-500 mt-1">📍 {venue.address}</p>
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      <span className="text-[10px] bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full font-medium">{TYPE_LABEL[venue.type]}</span>
-                      {venue.tags.slice(0, 3).map(tag => (
-                        <span key={tag} className="text-[10px] bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">{tag}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-stone-100">
-                      <span className="text-xs text-stone-400">🕐 Buka {venue.openTime} WIB</span>
-                      <span className="text-xs font-bold text-green-700">Lihat detail →</span>
-                    </div>
-                  </Link>
-                </div>
-              ))}
-            </div>
+            <VenueSearch venues={venues} citySlug={slug} cityName={city.name} />
           </>
         )}
 
