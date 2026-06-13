@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
-import { CITY_LIST, getCityBySlug, getVenuesByCity } from '@/lib/data'
+import { CITY_LIST, getCityBySlug, getVenuesByCity, venueSlug } from '@/lib/data'
 
 interface Props { params: Promise<{ city: string }> }
 
@@ -33,8 +33,22 @@ export default async function CityPage({ params }: Props) {
   const venues = getVenuesByCity(slug)
   const freeCount = venues.filter(v => v.isFree).length
 
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Tempat Nobar di ${city.name}`,
+    numberOfItems: venues.length,
+    itemListElement: venues.map((v, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: v.name,
+      url: `https://nobarfinder.com/${slug}/${venueSlug(v)}`,
+    })),
+  }
+
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <SiteHeader />
 
       <section className="bg-white border-b border-stone-200">
@@ -68,7 +82,7 @@ export default async function CityPage({ params }: Props) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {venues.map(venue => (
-              <div key={venue.id} className="bg-white border border-stone-200 rounded-2xl overflow-hidden hover:border-green-600 hover:shadow-md transition-all">
+              <Link key={venue.id} href={`/${slug}/${venueSlug(venue)}`} className="bg-white border border-stone-200 rounded-2xl overflow-hidden hover:border-green-600 hover:shadow-md transition-all block">
                 {/* Photo */}
                 <div className="h-44 bg-stone-100 relative flex items-center justify-center">
                   {venue.photoUrl ? (
@@ -97,12 +111,10 @@ export default async function CityPage({ params }: Props) {
                   </div>
                   <div className="flex items-center justify-between mt-4 pt-3 border-t border-stone-100">
                     <span className="text-xs text-stone-400">🕐 Buka {venue.openTime} WIB</span>
-                    <a href={venue.mapsUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-green-700 hover:text-green-900 transition-colors">
-                      Buka Maps →
-                    </a>
+                    <span className="text-xs font-bold text-green-700">Lihat detail →</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

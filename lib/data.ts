@@ -39,3 +39,20 @@ export const VENUES: NobarVenue[] = [
 export function getVenuesByCity(citySlug: string): NobarVenue[] {
   return VENUES.filter(v => v.city === citySlug)
 }
+
+// Slug dari nama venue untuk URL: "Nobar — Alun-alun Kidul" → "nobar-alun-alun-kidul"
+export function venueSlug(venue: NobarVenue): string {
+  return venue.name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+export function getVenue(citySlug: string, vSlug: string): NobarVenue | undefined {
+  return VENUES.find(v => v.city === citySlug && venueSlug(v) === vSlug)
+}
+
+export function getAllVenues(): NobarVenue[] {
+  return VENUES
+}
