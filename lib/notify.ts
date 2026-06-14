@@ -28,36 +28,40 @@ export async function notify({ subject, message, replyTo }: NotifyOptions): Prom
     return false
   }
 
-  const payload: Record<string, string> = {
+  // botcheck harus boolean false (bukan string) agar tidak diblokir spam filter
+  const payload = {
     access_key: accessKey,
     subject,
     from_name: 'NobarFinder',
     message,
-    // botcheck harus false agar tidak diblokir
-    botcheck: 'false',
+    botcheck: false,           // boolean, bukan string "false"
+    ...(replyTo ? { email: replyTo } : {}),
   }
 
-  // Tambah reply-to jika ada kontak pengirim
-  if (replyTo) payload.email = replyTo
-
   try {
+    console.log('[notify] Mengirim ke Web3Forms, subject:', subject)
     const res = await fetch('https://api.web3forms.com/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(payload),
     })
 
-    const data = await res.json().catch(() => ({ success: false }))
+    // Log raw response text dulu sebelum parse JSON
+    const text = await res.text()
+    console.log('[notify] Web3Forms raw response:', res.status, text.slice(0, 300))
+
+    let data: { success?: boolean; message?: string } = {}
+    try { data = JSON.parse(text) } catch { /* bukan JSON */ }
 
     if (!res.ok || !data.success) {
-      console.error('[notify] Web3Forms error:', res.status, JSON.stringify(data))
+      console.error('[notify] GAGAL:', res.status, data.message || text.slice(0, 200))
       return false
     }
 
-    console.log('[notify] Email terkirim:', subject)
+    console.log('[notify] ✓ Email terkirim:', subject)
     return true
   } catch (e) {
-    console.error('[notify] Fetch error:', e)
+    console.error('[notify] Fetch exception:', e)
     return false
   }
 }
