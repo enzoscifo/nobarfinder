@@ -84,6 +84,7 @@ export const VENUES: NobarVenue[] = [
     isFree: true,
     openTime: '19.00–24.00',
     mapsUrl: 'https://maps.google.com/?q=Alun-alun+Kidul+Yogyakarta',
+    websiteUrl: 'https://instagram.com/pemkotjogja',
     description: 'Venue nobar paling ikonik di Yogyakarta. Layar LED besar dipasang menghadap kerumunan, suasana ramai dan meriah. Tersedia banyak pedagang makanan dan minuman di sekitar. Cocok untuk keluarga maupun komunitas besar. Akses mudah dari Malioboro, parkir luas tersedia.',
   },
   {
@@ -98,6 +99,7 @@ export const VENUES: NobarVenue[] = [
     openTime: '08.00–24.00',
     mapsUrl: 'https://maps.google.com/?q=Filosofi+Kopi+Yogyakarta',
     phone: '0274-562222',
+    websiteUrl: 'https://instagram.com/filosofikopijogja',
     description: 'Kafe ikonik dari novel dan film Filosofi Kopi. Proyektor besar untuk nobar dengan gambar jernih. Suasana nyaman dan estetik, menu kopi specialty Nusantara pilihan. Disarankan reservasi untuk pertandingan besar. Minimum order berlaku saat event.',
   },
   {
@@ -137,6 +139,7 @@ export const VENUES: NobarVenue[] = [
     isFree: false,
     openTime: '16.00–02.00',
     mapsUrl: 'https://maps.google.com/?q=Ambarukmo+Yogyakarta',
+    phone: '0274-485858',
     description: 'Sports cafe khusus bola di kawasan Ambarukmo. Beberapa layar besar bisa menayangkan pertandingan berbeda sekaligus. Menu makanan dan minuman lengkap, suasana sporty. Cocok untuk nobar ramai dengan komunitas.',
   },
   {
@@ -178,6 +181,8 @@ export const VENUES: NobarVenue[] = [
     isFree: true,
     openTime: '18.00–01.00',
     mapsUrl: 'https://maps.google.com/?q=GBK+Senayan+Jakarta',
+    websiteUrl: 'https://instagram.com/gbk.indonesia',
+    phone: '021-5703990',
     description: 'Fan zone resmi di kawasan GBK Senayan — venue nobar terbesar di Jakarta. Layar LED raksasa kualitas broadcast profesional. Ratusan tenant F&B, hiburan live, dan area sponsor. Aktif saat Piala Dunia dan Euro. Akses KRL dari Stasiun Palmerah atau MRT Senayan.',
   },
   {
@@ -192,6 +197,7 @@ export const VENUES: NobarVenue[] = [
     openTime: '08.00–00.00',
     mapsUrl: 'https://maps.google.com/?q=Anomali+Coffee+Senopati+Jakarta',
     phone: '021-27537123',
+    websiteUrl: 'https://instagram.com/anomalicoffee',
     description: 'Kafe specialty coffee premium di Senopati. Layar 4K untuk nobar suasana premium. Minimum order berlaku. Cocok untuk nobar eksklusif dengan kolega. Menu makanan lengkap dan mocktail pilihan.',
   },
   {
@@ -205,6 +211,7 @@ export const VENUES: NobarVenue[] = [
     isFree: true,
     openTime: '12.00–23.00',
     mapsUrl: 'https://maps.google.com/?q=M+Bloc+Space+Jakarta',
+    websiteUrl: 'https://instagram.com/mblocspace',
     description: 'Creative space multifungsi di Kebayoran yang sering gelar nobar tematik. Industrial-chic dengan outdoor area luas. Food truck dan bar tersedia. Cocok untuk anak muda yang mau nobar dengan vibes berbeda dari biasanya.',
   },
   {
@@ -259,6 +266,7 @@ export const VENUES: NobarVenue[] = [
     isFree: true,
     openTime: '18.00–24.00',
     mapsUrl: 'https://maps.google.com/?q=Taman+Bungkul+Surabaya',
+    websiteUrl: 'https://instagram.com/pemkot_surabaya',
     description: 'Taman kota paling populer di Surabaya untuk nobar gratis. Layar LED di area terbuka, fasilitas toilet tersedia. Strategis di Jalan Darmo, mudah diakses. Atmosphere seru dan ramai saat pertandingan besar.',
   },
   {
@@ -313,6 +321,7 @@ export const VENUES: NobarVenue[] = [
     isFree: false,
     openTime: '18.00–03.00',
     mapsUrl: 'https://maps.google.com/?q=Braga+Bandung',
+    websiteUrl: 'https://instagram.com/the.mates.football',
     description: 'Sports cafe bertema sepakbola di kawasan Braga. Multi layar besar dari berbagai sudut. DJ sebelum kick-off dan halftime. Reservasi sangat disarankan untuk big match. Menu Western dan lokal tersedia.',
   },
   {
@@ -339,6 +348,8 @@ export const VENUES: NobarVenue[] = [
     isFree: false,
     openTime: '10.00–23.00',
     mapsUrl: 'https://maps.google.com/?q=Dago+Dream+Park+Bandung',
+    phone: '022-82776868',
+    websiteUrl: 'https://instagram.com/dagodreampark',
     description: 'Taman di dataran tinggi Dago dengan pemandangan kota Bandung spektakuler. Layar outdoor dengan backdrop kota yang indah. Pengalaman nobar yang benar-benar berbeda, udara sejuk khas Bandung atas.',
   },
   {
@@ -408,6 +419,7 @@ export const VENUES: NobarVenue[] = [
     isFree: true,
     openTime: '18.00–00.00',
     mapsUrl: 'https://maps.google.com/?q=Pantai+Losari+Makassar',
+    websiteUrl: 'https://instagram.com/pantailosari.makassar',
     description: 'Landmark paling ikonik Makassar. Nobar di sini dengan latar Selat Makassar adalah pengalaman tak terlupakan. Layar LED dipasang saat event besar. Puluhan kios pisang epe dan kuliner khas Makassar berjajar di sepanjang pantai.',
   },
   {
@@ -572,6 +584,7 @@ export const VENUES: NobarVenue[] = [
     isFree: false,
     openTime: '12.00–04.00',
     mapsUrl: 'https://maps.google.com/?q=Seminyak+Bali',
+    websiteUrl: 'https://instagram.com/seminyak_bali',
     description: 'Kawasan Seminyak dikenal dengan sports bar berkualitas internasional yang selalu putar semua pertandingan besar. Suasana kosmopolitan, campuran wisatawan dan ekspat. Bisa sampai dini hari saat big match.',
   },
   {
@@ -598,6 +611,7 @@ export const VENUES: NobarVenue[] = [
     isFree: false,
     openTime: '08.00–20.00',
     mapsUrl: 'https://maps.google.com/?q=Warung+Mak+Beng+Sanur+Bali',
+    phone: '0361-282633',
     description: 'Warung ikan goreng legendaris di Sanur yang buka sejak 1941. Pasang TV saat ada pertandingan, pengalaman nobar sambil menikmati ikan goreng Bali yang terkenal. Suasana warung lokal yang hangat dan otentik.',
   },
 
@@ -613,6 +627,7 @@ export const VENUES: NobarVenue[] = [
     isFree: true,
     openTime: '18.00–24.00',
     mapsUrl: 'https://maps.google.com/?q=Benteng+Kuto+Besak+Palembang',
+    websiteUrl: 'https://instagram.com/kotapalembang',
     description: 'Area benteng bersejarah tepi Sungai Musi dengan view Jembatan Ampera spektakuler. Layar LED dipasang menghadap sungai saat big match. Tersedia berbagai penjual pempek dan makanan khas Palembang.',
   },
   {
@@ -627,6 +642,19 @@ export const VENUES: NobarVenue[] = [
     openTime: '10.00–22.00',
     mapsUrl: 'https://maps.google.com/?q=Palembang+Icon+Mall',
     description: 'Mall terbesar Palembang dengan food court modern yang pasang layar besar saat pertandingan. Ber-AC, pilihan makanan beragam termasuk khas Palembang. Parkir luas.',
+  },
+  {
+    id: 'plb-3',
+    name: 'Warung Kopi Pempek 26',
+    city: 'palembang',
+    address: 'Jl. Sudirman, Ilir Timur, Palembang',
+    type: 'resto',
+    icon: '🐟',
+    tags: ['Pempek', 'Kopi', 'Layar TV', 'Lokal', 'Terjangkau'],
+    isFree: false,
+    openTime: '07.00–23.00',
+    mapsUrl: 'https://maps.google.com/?q=Sudirman+Palembang',
+    description: 'Warung kopi legendaris di Sudirman yang jadi favorit warga Palembang. Menu pempek, tekwan, dan kopi khas Sumatera Selatan. Layar TV besar dipasang saat ada pertandingan, suasana hangat dan akrab.',
   },
 
   // ── BALIKPAPAN ──────────────────────────────────────────────
@@ -655,6 +683,19 @@ export const VENUES: NobarVenue[] = [
     openTime: '10.00–22.00',
     mapsUrl: 'https://maps.google.com/?q=Big+Mall+Balikpapan',
     description: 'Mall terbesar dan terlengkap di Balikpapan. Food court di lantai atas pasang layar besar saat pertandingan. Ber-AC nyaman, pilihan kuliner lengkap. Cocok untuk keluarga atau grup kantor.',
+  },
+  {
+    id: 'bpp-3',
+    name: 'Kafe Kilang Balikpapan',
+    city: 'balikpapan',
+    address: 'Jl. MT. Haryono, Balikpapan Tengah',
+    type: 'cafe',
+    icon: '☕',
+    tags: ['AC', 'WiFi', 'Proyektor', 'Komunitas Ekspat', 'Kopi'],
+    isFree: false,
+    openTime: '09.00–01.00',
+    mapsUrl: 'https://maps.google.com/?q=Haryono+Balikpapan',
+    description: 'Kafe modern di pusat Balikpapan yang jadi favorit komunitas ekspat migas. Proyektor besar untuk nobar, WiFi kencang, kopi specialty pilihan. Buka sampai dini hari — pas untuk pertandingan jam ganjil.',
   },
 
   // ── PEKANBARU ───────────────────────────────────────────────
@@ -710,6 +751,7 @@ export const VENUES: NobarVenue[] = [
     isFree: true,
     openTime: '18.00–24.00',
     mapsUrl: 'https://maps.google.com/?q=Tepian+Kapuas+Pontianak',
+    websiteUrl: 'https://instagram.com/terimakasihjogja',
     description: 'Tepian Sungai Kapuas adalah jantung Pontianak — venue nobar dengan view sungai terbesar di Indonesia. Layar LED dipasang saat event besar, suasana sejuk di tepi sungai dengan kuliner khas Pontianak tersedia.',
   },
   {
@@ -724,6 +766,19 @@ export const VENUES: NobarVenue[] = [
     openTime: '10.00–22.00',
     mapsUrl: 'https://maps.google.com/?q=Mal+Pontianak',
     description: 'Pusat perbelanjaan utama Pontianak dengan food court yang pasang layar besar saat pertandingan. Ber-AC, pilihan kuliner termasuk makanan khas Pontianak. Lokasi strategis di pusat kota.',
+  },
+  {
+    id: 'ptk-3',
+    name: 'Warung Kopi Asiang',
+    city: 'pontianak',
+    address: 'Jl. Merapi, Pontianak Utara',
+    type: 'cafe',
+    icon: '☕',
+    tags: ['Kopi Pontianak', 'Legendaris', 'Murah', 'Buka Pagi', 'Lokal'],
+    isFree: false,
+    openTime: '05.00–22.00',
+    mapsUrl: 'https://maps.google.com/?q=Jalan+Merapi+Pontianak',
+    description: 'Warung kopi legendaris yang sudah ada puluhan tahun, salah satu yang terbaik di Pontianak. Kopi robusta khas Kalimantan Barat, harga sangat terjangkau. TV dipasang saat ada pertandingan penting, suasana lokal yang autentik.',
   },
 
   // ── MANADO ──────────────────────────────────────────────────
@@ -753,6 +808,19 @@ export const VENUES: NobarVenue[] = [
     mapsUrl: 'https://maps.google.com/?q=Megamas+Manado',
     description: 'Kawasan mal dan hiburan di tepi pantai Manado. Food court dan restoran memasang layar besar saat pertandingan. Ber-AC, pilihan kuliner khas Manado: tinutuan dan cakalang. View laut langsung.',
   },
+  {
+    id: 'mnd-3',
+    name: 'Kafe Aroma Manado',
+    city: 'manado',
+    address: 'Jl. Sam Ratulangi, Sario, Manado',
+    type: 'cafe',
+    icon: '☕',
+    tags: ['AC', 'WiFi', 'Proyektor', 'Kopi Arabika', 'Anak Muda'],
+    isFree: false,
+    openTime: '09.00–01.00',
+    mapsUrl: 'https://maps.google.com/?q=Sam+Ratulangi+Manado',
+    description: 'Kafe modern di jantung Manado yang populer di kalangan anak muda dan mahasiswa. Proyektor besar untuk nobar, WiFi kencang, kopi arabika Toraja pilihan. Suasana nyaman, buka sampai dini hari.',
+  },
 
   // ── SAMARINDA ───────────────────────────────────────────────
   {
@@ -780,6 +848,19 @@ export const VENUES: NobarVenue[] = [
     openTime: '10.00–22.00',
     mapsUrl: 'https://maps.google.com/?q=Big+Mall+Samarinda',
     description: 'Mal terbesar Samarinda dengan food court lengkap yang memasang layar besar saat ada pertandingan. Ber-AC nyaman, berbagai pilihan kuliner. Parkir luas, mudah diakses dari pusat kota.',
+  },
+  {
+    id: 'smd-3',
+    name: 'Taman Cerdas Samarinda',
+    city: 'samarinda',
+    address: 'Jl. Bhayangkara, Samarinda Ulu',
+    type: 'outdoor',
+    icon: '🌳',
+    tags: ['Gratis', 'Komunitas', 'Layar LED', 'Keluarga', 'Taman Kota'],
+    isFree: true,
+    openTime: '16.00–23.00',
+    mapsUrl: 'https://maps.google.com/?q=Taman+Cerdas+Samarinda',
+    description: 'Taman kota modern Samarinda yang jadi pusat aktivitas warga. Layar LED tersedia saat event besar, komunitas bola Samarinda aktif gelar nobar di sini. Fasilitas taman bersih dan terawat, cocok untuk semua usia.',
   },
 ]
 
