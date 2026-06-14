@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
 import PageWrapper from '@/components/PageWrapper'
+import VenueActions from '@/components/VenueActions'
 import { CITY_LIST, getCityBySlug, venueSlug } from '@/lib/data'
 import { getApprovedByCity, getEventsByVenue } from '@/lib/db'
 import { NobarVenue } from '@/types'
@@ -175,6 +176,14 @@ export default async function VenuePage({ params }: Props) {
             </a>
           </div>
         </div>
+
+        {/* Claim / Verified badge */}
+        <VenueActions
+          venueId={venue.id}
+          venueName={venue.name}
+          isClaimed={venue.isClaimed ?? false}
+          isVerified={venue.isVerified ?? false}
+        />
 
         {/* Photo CTA if no photo */}
         {!venue.photoUrl && (

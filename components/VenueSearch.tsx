@@ -151,6 +151,11 @@ export default function VenueSearch({ venues, citySlug, cityName }: Props) {
                 <Link href={`/${citySlug}/${vSlug}`} className="block p-5">
                   <h2 className="font-display font-bold text-stone-900 text-lg leading-tight">
                     {query ? <Highlight text={venue.name} query={query} /> : venue.name}
+                    {venue.isVerified && (
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full align-middle">
+                        ✓ Verified
+                      </span>
+                    )}
                   </h2>
                   <p className="text-xs text-stone-500 mt-1 line-clamp-1">📍 {venue.address}</p>
                   <div className="flex flex-wrap gap-1.5 mt-3">

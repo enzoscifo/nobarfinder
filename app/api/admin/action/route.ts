@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { isAdmin } from '@/lib/auth'
 import { approveVenue, deleteVenue, updateVenueFull, insertVenueAdmin,
-         approveEvent, deleteEvent, getApprovedVenues } from '@/lib/db'
+         approveEvent, deleteEvent, getApprovedVenues,
+         verifyVenue, rejectClaim } from '@/lib/db'
 import { sanitizeText, isValidVenueType, isValidUrl, MAX } from '@/lib/validate'
 
 async function revalidateAll(venueCity?: string) {
@@ -89,6 +90,16 @@ export async function POST(request: Request) {
     } else if (body.action === 'delete-event') {
       if (!body.id) return NextResponse.json({ success: false }, { status: 400 })
       await deleteEvent(String(body.id))
+      await revalidateAll()
+
+    } else if (body.action === 'verify-claim') {
+      if (!body.id) return NextResponse.json({ success: false }, { status: 400 })
+      await verifyVenue(String(body.id))
+      await revalidateAll()
+
+    } else if (body.action === 'reject-claim') {
+      if (!body.id) return NextResponse.json({ success: false }, { status: 400 })
+      await rejectClaim(String(body.id))
       await revalidateAll()
 
     } else {

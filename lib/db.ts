@@ -15,6 +15,10 @@ export interface DBVenue extends NobarVenue {
   submitterName?: string
   submitterContact?: string
   createdAt?: string
+  isClaimed?: boolean
+  isVerified?: boolean
+  claimedBy?: string    // nama/kontak pemilik
+  claimedAt?: string
 }
 
 export interface DBEvent {
@@ -56,6 +60,10 @@ export async function ensureSchema() {
       submitter_name TEXT,
       submitter_contact TEXT,
       status TEXT DEFAULT 'pending',
+      is_claimed BOOLEAN DEFAULT false,
+      is_verified BOOLEAN DEFAULT false,
+      claimed_by TEXT,
+      claimed_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `
@@ -85,6 +93,10 @@ export async function ensureSchema() {
   `
   // Migrasi idempotent — kolom baru
   await sql`ALTER TABLE venues ADD COLUMN IF NOT EXISTS website_url TEXT`
+  await sql`ALTER TABLE venues ADD COLUMN IF NOT EXISTS is_claimed BOOLEAN DEFAULT false`
+  await sql`ALTER TABLE venues ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`
+  await sql`ALTER TABLE venues ADD COLUMN IF NOT EXISTS claimed_by TEXT`
+  await sql`ALTER TABLE venues ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ`
   await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'lainnya'`
   await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS report_count INT DEFAULT 0`
 
@@ -123,6 +135,10 @@ function rowToVenue(r: Record<string, unknown>): DBVenue {
     submitterName: (r.submitter_name as string) || undefined,
     submitterContact: (r.submitter_contact as string) || undefined,
     status: r.status as 'pending' | 'approved',
+    isClaimed: Boolean(r.is_claimed),
+    isVerified: Boolean(r.is_verified),
+    claimedBy: (r.claimed_by as string) || undefined,
+    claimedAt: r.claimed_at ? String(r.claimed_at) : undefined,
     createdAt: r.created_at ? String(r.created_at) : undefined,
   }
 }
@@ -236,6 +252,40 @@ export async function updateVenueFull(id: string, data: {
   if (data.description !== undefined) await sql`UPDATE venues SET description = ${data.description} WHERE id = ${id}`
   if (data.icon !== undefined)        await sql`UPDATE venues SET icon = ${data.icon} WHERE id = ${id}`
   if (data.tags !== undefined)        await sql`UPDATE venues SET tags = ${data.tags.join('|')} WHERE id = ${id}`
+}
+
+// ── CLAIM & VERIFIED ────────────────────────────────────────────
+// Tandai venue sebagai diklaim (pending review admin)
+export async function claimVenue(id: string, claimedBy: string) {
+  await ensureSchema()
+  await sql`
+    UPDATE venues SET is_claimed = true, claimed_by = ${claimedBy}, claimed_at = NOW()
+    WHERE id = ${id}
+  `
+}
+
+// Admin approve klaim → venue jadi Verified
+export async function verifyVenue(id: string) {
+  await ensureSchema()
+  await sql`UPDATE venues SET is_verified = true WHERE id = ${id}`
+}
+
+// Admin reject klaim → reset
+export async function rejectClaim(id: string) {
+  await ensureSchema()
+  await sql`UPDATE venues SET is_claimed = false, claimed_by = NULL, claimed_at = NULL WHERE id = ${id}`
+}
+
+// READ: venue yang pending klaim (belum diverifikasi)
+export async function getPendingClaims(): Promise<DBVenue[]> {
+  if (!DB_ENABLED) return []
+  await ensureSchema()
+  const { rows } = await sql`
+    SELECT * FROM venues
+    WHERE is_claimed = true AND is_verified = false
+    ORDER BY claimed_at ASC
+  `
+  return rows.map(rowToVenue)
 }
 
 export async function deleteVenue(id: string) {

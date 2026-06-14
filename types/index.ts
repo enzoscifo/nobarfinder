@@ -21,6 +21,8 @@ export interface NobarVenue {
   photoUrl?: string
   websiteUrl?: string
   description?: string // deskripsi & fasilitas venue (tampil publik)
+  isClaimed?: boolean
+  isVerified?: boolean
 }
 
 export interface VenueSubmission {

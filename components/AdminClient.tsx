@@ -496,6 +496,69 @@ function VenueRow({ venue: initialVenue }: { venue: DBVenue }) {
 // Dashboard
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
+// Claim Row (admin)
+// ─────────────────────────────────────────────
+function ClaimRow({ venue: initial }: { venue: DBVenue }) {
+  const [venue, setVenue] = useState(initial)
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState<'verified' | 'rejected' | null>(null)
+
+  async function act(action: 'verify-claim' | 'reject-claim') {
+    setBusy(true)
+    const res = await fetch('/api/admin/action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, id: venue.id }),
+    })
+    const data = await res.json()
+    if (data.success) setDone(action === 'verify-claim' ? 'verified' : 'rejected')
+    else { alert(data.message || 'Gagal'); setBusy(false) }
+  }
+
+  if (done === 'rejected') return null
+
+  return (
+    <div className={`bg-white border rounded-xl p-4 ${done === 'verified' ? 'border-green-300' : 'border-amber-300'}`}>
+      <div className="flex items-start gap-3">
+        <div className="text-2xl shrink-0">{venue.icon}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-stone-900 text-sm">{venue.name}</span>
+            {done === 'verified'
+              ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800">✓ VERIFIED</span>
+              : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">⏳ PENDING KLAIM</span>
+            }
+          </div>
+          <p className="text-xs text-stone-500 mt-1">📍 {venue.address} · {venue.city}</p>
+          {venue.claimedBy && (
+            <div className="mt-2 bg-stone-50 border border-stone-100 rounded-lg px-3 py-2">
+              <p className="text-xs font-semibold text-stone-600 mb-0.5">Diklaim oleh:</p>
+              <p className="text-xs text-stone-500">{venue.claimedBy}</p>
+            </div>
+          )}
+          {venue.claimedAt && (
+            <p className="text-[11px] text-stone-400 mt-1">
+              🕐 {new Date(venue.claimedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          )}
+        </div>
+      </div>
+      {done !== 'verified' && (
+        <div className="flex gap-2 mt-3 pt-3 border-t border-stone-100">
+          <button onClick={() => act('verify-claim')} disabled={busy}
+            className="flex-1 bg-green-700 hover:bg-green-800 disabled:opacity-60 text-white text-xs font-bold py-2.5 rounded-lg transition-colors">
+            {busy ? '…' : '✓ Verifikasi'}
+          </button>
+          <button onClick={() => act('reject-claim')} disabled={busy}
+            className="flex-1 bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-700 text-xs font-bold py-2.5 rounded-lg transition-colors border border-red-200">
+            ✕ Tolak
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
 // Logout Button
 // ─────────────────────────────────────────────
 function LogoutButton() {
@@ -516,10 +579,15 @@ function LogoutButton() {
 // ─────────────────────────────────────────────
 // Dashboard
 // ─────────────────────────────────────────────
-export function AdminDashboard({ venues: initialVenues, events: initialEvents }: { venues: DBVenue[]; events: DBEvent[] }) {
+export function AdminDashboard({ venues: initialVenues, events: initialEvents, claims: initialClaims }: {
+  venues: DBVenue[]
+  events: DBEvent[]
+  claims: DBVenue[]
+}) {
   const [venues, setVenues] = useState(initialVenues)
   const [events, setEvents] = useState(initialEvents)
-  const [tab, setTab] = useState<'venues' | 'events'>('venues')
+  const [claims] = useState(initialClaims)
+  const [tab, setTab] = useState<'venues' | 'events' | 'claims'>('venues')
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('pending')
   const [showAdd, setShowAdd] = useState(false)
 
@@ -570,10 +638,14 @@ export function AdminDashboard({ venues: initialVenues, events: initialEvents }:
             { label: 'Venue', count: venues.length, color: 'stone' },
             { label: 'Event', count: events.length, color: 'stone' },
             { label: 'Pending', count: totalPending, color: totalPending > 0 ? 'amber' : 'stone' },
-            { label: 'Approved', count: approvedVenues.length + approvedEvents.length, color: 'green' },
+            { label: 'Klaim', count: claims.length, color: claims.length > 0 ? 'blue' : 'stone' },
           ].map(s => (
             <div key={s.label} className="bg-white border border-stone-200 rounded-xl p-3 text-center">
-              <div className={`text-xl font-black ${s.color === 'amber' && s.count > 0 ? 'text-amber-600' : s.color === 'green' ? 'text-green-700' : 'text-stone-700'}`}>{s.count}</div>
+              <div className={`text-xl font-black ${
+                s.color === 'amber' && s.count > 0 ? 'text-amber-600'
+                : s.color === 'green' ? 'text-green-700'
+                : s.color === 'blue' && s.count > 0 ? 'text-blue-600'
+                : 'text-stone-700'}`}>{s.count}</div>
               <div className="text-[10px] text-stone-500 font-medium uppercase tracking-wide">{s.label}</div>
             </div>
           ))}
@@ -589,26 +661,43 @@ export function AdminDashboard({ venues: initialVenues, events: initialEvents }:
             className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${tab === 'events' ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-900'}`}>
             🗓️ Event {(pendingEvents.length + flaggedEvents.length) > 0 && <span className="ml-1 bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingEvents.length + flaggedEvents.length}</span>}
           </button>
+          <button onClick={() => setTab('claims')}
+            className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${tab === 'claims' ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-900'}`}>
+            🏷️ Klaim {claims.length > 0 && <span className="ml-1 bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{claims.length}</span>}
+          </button>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-6">
-          {([
-            { k: 'pending', label: `Perlu Tinjau (${tab === 'venues' ? pendingVenues.length : pendingEvents.length + flaggedEvents.length})` },
-            { k: 'approved', label: `Approved (${tab === 'venues' ? approvedVenues.length : approvedEvents.length})` },
-            { k: 'all', label: `Semua (${tab === 'venues' ? venues.length : events.length})` },
-          ] as const).map(f => (
-            <button key={f.k} onClick={() => setFilter(f.k)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                filter === f.k ? 'bg-green-700 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-900'
-              }`}>
-              {f.label}
-            </button>
-          ))}
-        </div>
+        {/* Filter tabs — hanya untuk venue & event */}
+        {tab !== 'claims' && (
+          <div className="flex gap-2 mb-6">
+            {([
+              { k: 'pending', label: `Perlu Tinjau (${tab === 'venues' ? pendingVenues.length : pendingEvents.length + flaggedEvents.length})` },
+              { k: 'approved', label: `Approved (${tab === 'venues' ? approvedVenues.length : approvedEvents.length})` },
+              { k: 'all', label: `Semua (${tab === 'venues' ? venues.length : events.length})` },
+            ] as const).map(f => (
+              <button key={f.k} onClick={() => setFilter(f.k)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                  filter === f.k ? 'bg-green-700 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-900'
+                }`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Content */}
-        {tab === 'venues' ? (
+        {tab === 'claims' ? (
+          claims.length === 0 ? (
+            <div className="bg-white border border-stone-200 rounded-2xl py-16 text-center text-stone-400">
+              <div className="text-3xl mb-2">🏷️</div>
+              <p className="text-sm">Belum ada klaim venue yang masuk</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {claims.map(v => <ClaimRow key={v.id} venue={v} />)}
+            </div>
+          )
+        ) : tab === 'venues' ? (
           shownVenues.length === 0 ? (
             <div className="bg-white border border-stone-200 rounded-2xl py-16 text-center text-stone-400">
               <div className="text-3xl mb-2">{filter === 'pending' ? '📭' : '🏟️'}</div>
