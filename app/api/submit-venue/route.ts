@@ -6,18 +6,28 @@ import { notify } from '@/lib/notify'
 
 export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  console.log('[submit-venue] Request masuk dari IP:', ip)
 
   const allowed = await rateLimit(rlKey('submit-venue', ip), 3, 3600)
   if (!allowed) {
+    console.log('[submit-venue] Rate limited:', ip)
     return NextResponse.json({ success: false, message: 'Terlalu banyak submission. Coba lagi dalam 1 jam.' }, { status: 429 })
   }
 
   let body: Record<string, string>
   try { body = await request.json() }
-  catch { return NextResponse.json({ success: false, message: 'Data tidak valid' }, { status: 400 }) }
+  catch (e) {
+    console.error('[submit-venue] JSON parse error:', e)
+    return NextResponse.json({ success: false, message: 'Data tidak valid' }, { status: 400 })
+  }
+
+  console.log('[submit-venue] Body diterima, fields:', Object.keys(body).join(', '))
 
   // Honeypot
-  if (body.website) return NextResponse.json({ success: true, message: 'Terkirim' })
+  if (body.website) {
+    console.log('[submit-venue] Honeypot triggered')
+    return NextResponse.json({ success: true, message: 'Terkirim' })
+  }
 
   const name             = sanitizeText(body.venueName, MAX.NAME)
   const address          = sanitizeText(body.address, MAX.ADDRESS)
@@ -43,6 +53,8 @@ export async function POST(request: Request) {
   const cityFinal = isNewCity ? cityCustom : cityRaw
   const citySlug  = cityFinal.toLowerCase().replace(/\s+/g, '-')
 
+  console.log('[submit-venue] Validasi OK. DB_ENABLED:', DB_ENABLED, '| Venue:', name, '| Kota:', cityFinal)
+
   if (DB_ENABLED) {
     try {
       await insertSubmission({
@@ -55,8 +67,11 @@ export async function POST(request: Request) {
         submitterName: submitterName || undefined,
         submitterContact,
       })
+      console.log('[submit-venue] DB insert OK')
     } catch (e) { console.error('[submit-venue] DB error:', e) }
   }
+
+  console.log('[submit-venue] Memanggil notify()...')
 
   // Notifikasi email
   await notify({
@@ -75,6 +90,8 @@ export async function POST(request: Request) {
     ].join('\n'),
     replyTo: submitterContact,
   })
+
+  console.log('[submit-venue] notify() selesai dipanggil')
 
   if (!DB_ENABLED) {
     return NextResponse.json({ success: false, message: 'Sistem belum dikonfigurasi.' }, { status: 503 })
